@@ -1,12 +1,12 @@
-## AWS S3 Triggered Staging and Data Catalog sync engine
+# AWS S3 event-based Staging and Data Catalog engine
 
-A packaged Data Lake solution to repartition the data in a Raw bucket, create datasets in parquet on an Staging bucket, Sync the Glue Catalog Databases, Glue Crawlers and Data Stores that builds a highly functional Data Lake, with a data catalog queryable via Elasticsearch (optional)
+A packaged Data Lake solution to repartition the data in a Raw bucket, create datasets in parquet on an Staging bucket, Syncs the Glue Catalog Databases, Glue Crawlers and Data Stores building a highly functional Data Lake, with a data catalog queryable via Elasticsearch (optional)
 
 ## License
 
 This library is licensed under the Apache 2.0 License. 
 
-# Staging engine DataLake installation instructions
+## Staging engine DataLake installation instructions
 These are the steps required to provision the  Packaged Datalake Solution and watch the ingress of data.
 * Provision the Data Lake Structure (5 minutes)
 * Provision the Visualisation
