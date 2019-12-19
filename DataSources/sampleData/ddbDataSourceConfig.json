@@ -1,0 +1,25 @@
+{
+    "crawlerSettings": {
+      "glueRoleName": "AWSGlueServiceRole-ampala",
+      "stagingDatabasePrefix": "rappi_staging"
+      },
+    "fileSettings": {
+      "fileFormat": "csv",
+      "calculateMD5": "False",
+      "stagingFolderPath": "amazon_reviews",
+      "stagingPartitionSettings": {
+        "expression": "dt=%Y-%m-%d",
+        "timezone": "America/Bogota"
+      }
+    },
+    "fileType": "co_generic",
+    "metadata": {
+      "country": "co",
+      "quality": "High",
+      "sourcesystem": "RDS Postgres"
+    },
+    "tags": {
+      "dataOwner": "Rappi",
+      "pii": "FALSE"
+    }
+  }
