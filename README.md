@@ -1,6 +1,6 @@
 # AWS S3 event-based Staging and Data Catalog engine
 
-  ![image text](https://raw.githubusercontent.com/andresmaopal/data-lake-staging-engine/master/Resources/diagrama_arquitectura.png)
+  ![image text](https://raw.githubusercontent.com/andresmaopal/data-lake-staging-engine/master/Resources/diagrama_arquitectura_small.png)
 
 A packaged Data Lake solution to repartition the data in a Raw bucket, create datasets in parquet on an Staging bucket, Syncs the Glue Catalog Databases, Glue Crawlers and Data Stores building a highly functional Data Lake, with a data catalog queryable via Elasticsearch (optional)
 
