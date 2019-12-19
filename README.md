@@ -4,6 +4,8 @@
 
 A packaged Data Lake solution to repartition the data in a Raw bucket, create datasets in parquet on an Staging bucket, Syncs the Glue Catalog Databases, Glue Crawlers and Data Stores building a highly functional Data Lake, with a data catalog queryable via Elasticsearch (optional)
 
+Project forked and customized based on [AWS Accelerated Data Lake](https://github.com/aws-samples/accelerated-data-lake)
+
 ## License
 
 This library is licensed under the Apache 2.0 License. 
