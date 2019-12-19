@@ -10,7 +10,8 @@ Project forked and customized based on [AWS Accelerated Data Lake](https://githu
 
 This library is licensed under the Apache 2.0 License. 
 
-## Staging engine DataLake installation instructions
+## Staging engine DataLake installation general instructions
+
 These are the steps required to provision the  Packaged Datalake Solution and watch the ingress of data.
 * Provision the Data Lake Structure (5 minutes)
 * Provision the Visualisation
