@@ -1,6 +1,6 @@
 {
     "crawlerSettings": {
-      "glueRoleName": "AWSGlueServiceRole-ampala",
+      "glueRoleName": "GlueOpsServiceRole",
       "stagingDatabasePrefix": "rappi_staging"
       },
     "fileSettings": {

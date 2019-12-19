@@ -87,12 +87,7 @@ Resources:
               Service:
                 - lambda.amazonaws.com
                 - glue.amazonaws.com
-              AWS:
-                !Join
-                  - ''
-                  - - Fn::ImportValue: !Sub "${EnvironmentPrefix}DataLake-S3Raw-Arn"            
-                  - /*
-
+              AWS: !GetAtt [ LambdaExecutionRole, Arn ]
             Action: "sts:AssumeRole"
       Path: "/"
 
