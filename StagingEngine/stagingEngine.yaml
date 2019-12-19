@@ -235,7 +235,7 @@ Resources:
       Timeout: 1000
       Role: !GetAtt [ LambdaExecutionRole, Arn]
       Policies:
-        - GlueIAMPassRolePolicy:
+        - GlueS3RolePolicy:
           Statement:
           - Sid: gluePermissions
             Effect: Allow
@@ -251,20 +251,14 @@ Resources:
             - glue:StartTrigger
             - glue:CreateCrawler
             Resource: "*"
-          - Sid: writelogs
-            Effect: Allow
-            Action:
-            - logs:CreateLogGroup
-            - logs:CreateLogStream
-            - logs:PutLogEvents
-            Resource: arn:aws:logs:*:*:*
+        - IAM_PassRole:
+          Statement:
           - Sid: iamroles
             Effect: Allow
             Action:
             - iam:PassRole
             Resource: arn:aws:*
-
-      
+ 
   DeleteRawFile:
     Type: 'AWS::Serverless::Function'
     Properties:
@@ -293,7 +287,7 @@ Resources:
         - SNSPublishMessagePolicy:
             TopicName: '*'
               - PolicyName: LambdaExecutionRole
-        - GlueIAMPassTrustRolePolicy:
+        - GlueCrawlerRolePolicy:
           Statement:
           - Sid: gluePermissions
             Effect: Allow
@@ -309,19 +303,20 @@ Resources:
             - glue:StartTrigger
             - glue:CreateCrawler
             Resource: "*"
-          - Sid: writelogs
-            Effect: Allow
-            Action:
-            - logs:CreateLogGroup
-            - logs:CreateLogStream
-            - logs:PutLogEvents
-            Resource: arn:aws:logs:*:*:*
+        - IAM_PassPolicy:
+          Statement:
           - Sid: iamroles
             Effect: Allow
             Action:
             - iam:PassRole
             Resource: arn:aws:*
-
+        - LogRecordPolicy:
+          Statement:
+          - Sid: writelogs
+            Effect: Allow
+            Action:
+            - logs:*
+            Resource: arn:aws:logs:*:*:*
 
   CopyFileFromRawToFailed:
     Type: 'AWS::Serverless::Function'
