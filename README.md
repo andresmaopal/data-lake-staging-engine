@@ -38,12 +38,12 @@ Execution steps:
 * Go to the CloudFormation section of the AWS Console.
 * Think of an environment prefix for your datalake. This prefix will make your S3 buckets globally unique (so it must be lower case) and wil help identify your datalake components if multiple datalakes share an account (not recommended, the number of resources will lead to confusion and pottential security holes). Ideally the prefix should contain the datalake owner / service and the environment - a good example is: wildrydes-dev-
 * Create a new stack using the template `/DataLakeStructure/dataLakeStructure.yaml` 
-* Enter the stack name. For example: `wildrydes-dev-datalake-structure`
-* Enter the environment prefix, in this case: `wildrydes-dev-`
+* Enter the stack name. For example: `octank-dev-datalake-structure`
+* Enter the environment prefix, in this case: `octank-dev-`
 * Add a KMS Key ARN if you want your S3 Buckets encrypted (recommended - also, there are further improvements with other encryption options imminent in this area)
 * All other options are self explanatory, and the defaults are acceptable when testing the solution.
 
-## 2. Provisioning the Visualisations
+## 2. Provisioning the Visualisations (optional)
 This step is optional, but highly recommended. If the customer does not want elasticsearch, a temporary cluster will allow debugging while the datalake is set up, and will illustrate its value. 
 
 If you want elasticsearch visualisation, both of the following steps are required (in order).
@@ -75,12 +75,12 @@ Execution steps:
 
 For this example, the commands should be:
 ````
-sam package --template-file ./lambdaDeploy.yaml --output-template-file lambdaDeployCFN.yaml --s3-bucket wildrydes-dev-visualisationcodepackages
+sam package --template-file ./lambdaDeploy.yaml --output-template-file lambdaDeployCFN.yaml --s3-bucket octank-dev-visualisationcodepackages
 
-sam deploy --template-file lambdaDeployCFN.yaml --stack-name wildrydes-dev-datalake-elasticsearch-lambdas --capabilities CAPABILITY_IAM --parameter-overrides EnvironmentPrefix=wildrydes-dev-
+sam deploy --template-file lambdaDeployCFN.yaml --stack-name octank-dev-datalake-elasticsearch-lambdas --capabilities CAPABILITY_IAM --parameter-overrides EnvironmentPrefix=wildrydes-dev-
 ````
 
-## 3. Provision the Staging Engine and add a trigger
+## 3. Provision the Staging and Data Catalog Engine and add an S3 trigger
 This is the workhorse of the Staging engine - it creates lambdas and a step function, that takes new files dropped into the raw bucket, verifies their source and schema, applies tags and metadata, then copies the file to the staging bucket.
 
 On both success and failure, Staging engine updates the DataCatalog table in DynamoDB. All changes to this table are sent to elasticsearch, allowing users to see the full history of all imports and see what input files were used in each DataLake query.
@@ -98,9 +98,9 @@ Execution steps:
 
 For this example, the commands should be:
 ````
-sam package --template-file ./stagingEngine.yaml --output-template-file stagingEngineDeploy.yaml --s3-bucket wildrydes-dev-stagingenginecodepackages
+sam package --template-file ./stagingEngine.yaml --output-template-file stagingEngineDeploy.yaml --s3-bucket octank-dev-stagingenginecodepackages
 
-sam deploy --template-file stagingEngineDeploy.yaml --stack-name wildrydes-dev-datalake-staging-engine --capabilities CAPABILITY_IAM --parameter-overrides EnvironmentPrefix=wildrydes-dev-
+sam deploy --template-file stagingEngineDeploy.yaml --stack-name octank-dev-datalake-staging-engine --capabilities CAPABILITY_IAM --parameter-overrides EnvironmentPrefix=wildrydes-dev-
 ````
 
 ### 3.1 Add the Staging trigger
@@ -109,9 +109,9 @@ Cloudwatch cannot create and trigger lambdas from changes to existing S3 buckets
 Execution steps:
 * Go into the AWS Console, Lambda screen.
 * Find the lambda named: `<ENVIRONMENT_PREFIX>datalake-staging-StartFileProcessing-<RANDOM CHARS ADDED BY SAM>`
-* Manually add an S3 trigger, generated from PUT events on the RAW bucket you created (in this example, this would be `wildrydes-dev-raw`)
+* Manually add an S3 trigger, generated from both PUT and MULTIPART UPLOAD events on the RAW bucket you created (in this example, this would be `octank-dev-raw`)
 
-**NOTE:** Do not use "Object Created (All)" as a trigger - 3x3x3 copies new files when it adds their metadata, so a trigger on All will cause the staging process to begin again after the copy.
+**NOTE:** Do not use "Object Created (All)" as a trigger - Staging-Catalog-Engine copies new files when it adds their metadata, so a trigger on All will cause the staging process to begin again after the copy.
 
 Congratulations! The Staging engine is now fully provisioned! Now let's configure a datasource and add some data.
 
@@ -121,18 +121,19 @@ Execution steps:
 * Open the file `DataSources/sampleData/ddbDataSourceConfig.json`
 * Copy the file's contents to the clipboard.
 * Go into the AWS Console, DynamoDB screen.
-* Open the DataSource table, which for the environment prefix used in this demonstration will be: `wildrydes-dev-dataSources`
-* Go to the Items tab, click Create Item, and paste in the contents of the `ddbDataSourceConfig.json` file. 
-* Save the item.
+* Open the DataSource table, which for the environment prefix used in this demonstration will be: `octank-dev-dataSources`
+* Go to the Items tab, click Create Item, and paste in the contents of the file `ddbDataSourceConfig.json` located in /DataSources/sampleData/. 
+* Save the created item.
 
 You now have a fully configured DataSource. The individual config attributes will be explained in the next version of this documentation.
 
 ### 4.2 Ingress a sample file for the new data source
 Execution steps:
-* Go into the AWS Console, S3 screen, open the raw bucket (`wildrydes-dev-raw` in this example)
-* Create a folder "rydebookings". This is because the data source is configured to expect its data to be ingressed into a folder with this name (just use the bucket settings for the new folder). 
-* Using the console, upload the file `DataSources/sampleData/LOAD0000001.csv` into this folder.
-* Confirm the file has appeared in the staging folder, with a path similar to: `wildrydes-dev-staging/co/database/schema/table/2018-10-26/LOAD0000001.parquet`
+* Go into the AWS Console, S3 screen, open the raw bucket (`octank-dev-raw` in this example)
+* Create the main Landing folfer "landing".
+* Within that folder create a new one: "orders".  
+* Using the Web console, upload the file `DataSources/sampleData/LOAD0000001.csv` into this folder.
+* Confirm the file has appeared in the Raw (partitioned folder) and  Staging folder, with a path similar in RAW like: `octank-dev-raw/partitioned/co/database_name/schema_name/table_name/dt=2018-10-26/LOAD0000001.csv` and in STAGING: `octank-dev-staging/co/database_name/schema_name/table_name/dt=2018-10-26/89585bcb3984476fad1d028ba524d9dd.parquet`
 
 If the file is not in the staging folder, one of the earlier steps has been executed incorrectly.
 If the file is not in the failed folder, one of the earlier steps has been executed incorrectly.
@@ -147,7 +148,7 @@ Execution steps:
 * You will see there is no data - this is because the index needs to be created (the data is present, so we will let kibana auto-create it)
 * Click on the management tab, on the left.
 * Click "Index Patterns"
-* Paste in: `wildrydes-dev-datacatalog` (so `<ENVIRONMENT_PREFIX>datacatalog`). You will see this name in the available index patterns at the base of the screen.
+* Paste in: `octank-dev-datacatalog` (so `<ENVIRONMENT_PREFIX>datacatalog`). You will see this name in the available index patterns at the base of the screen.
 * Click "Next step"
 * Select `@Timestamp` in the "Time Filter field name" field - this is very important, otherwise you will not get the excellent kibana timeline.
 * Click "Create Index Pattern" and the index will be created. Click on the Discover tab to see your data catalog and details of your failed and successful ingress. 
