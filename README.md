@@ -1,13 +1,13 @@
-## AWS Accelerated Data Lake (3x3x3)
+# AWS S3 event-based Staging and Data Catalog engine
 
-A packaged Data Lake solution, that builds a highly functional Data Lake, with a data catalog queryable via Elasticsearch
+A packaged Data Lake solution to repartition the data in a Raw bucket, create datasets in parquet on an Staging bucket, Syncs the Glue Catalog Databases, Glue Crawlers and Data Stores building a highly functional Data Lake, with a data catalog queryable via Elasticsearch (optional)
 
 ## License
 
 This library is licensed under the Apache 2.0 License. 
 
-# 3x3x3 DataLake installation instructions
-These are the steps required to provision the 3x3x3 Packaged Datalake Solution and watch the ingress of data.
+## Staging engine DataLake installation instructions
+These are the steps required to provision the  Packaged Datalake Solution and watch the ingress of data.
 * Provision the Data Lake Structure (5 minutes)
 * Provision the Visualisation
     * Provision Elasticsearch (15 minutes)
@@ -77,9 +77,9 @@ sam deploy --template-file lambdaDeployCFN.yaml --stack-name wildrydes-dev-datal
 ````
 
 ## 3. Provision the Staging Engine and add a trigger
-This is the workhorse of 3x3x3 - it creates lambdas and a step function, that takes new files dropped into the raw bucket, verifies their source and schema, applies tags and metadata, then copies the file to the staging bucket.
+This is the workhorse of the Staging engine - it creates lambdas and a step function, that takes new files dropped into the raw bucket, verifies their source and schema, applies tags and metadata, then copies the file to the staging bucket.
 
-On both success and failure, 3x3x3 updates the DataCatalog table in DynamoDB. All changes to this table are sent to elasticsearch, allowing users to see the full history of all imports and see what input files were used in each DataLake query.
+On both success and failure, Staging engine updates the DataCatalog table in DynamoDB. All changes to this table are sent to elasticsearch, allowing users to see the full history of all imports and see what input files were used in each DataLake query.
 
 Execution steps:
 (ignore these steps if already done in the visualisation step)
@@ -109,12 +109,12 @@ Execution steps:
 
 **NOTE:** Do not use "Object Created (All)" as a trigger - 3x3x3 copies new files when it adds their metadata, so a trigger on All will cause the staging process to begin again after the copy.
 
-Congratulations! 3x3x3 is now fully provisioned! Now let's configure a datasource and add some data.
+Congratulations! The Staging engine is now fully provisioned! Now let's configure a datasource and add some data.
 
 ## 4. Configure a sample data source and add data
 ### 4.1 Configure the sample data source
 Execution steps:
-* Open the file `DataSources/RydeBookings/ddbDataSourceConfig.json`
+* Open the file `DataSources/sampleData/ddbDataSourceConfig.json`
 * Copy the file's contents to the clipboard.
 * Go into the AWS Console, DynamoDB screen.
 * Open the DataSource table, which for the environment prefix used in this demonstration will be: `wildrydes-dev-dataSources`
@@ -127,18 +127,10 @@ You now have a fully configured DataSource. The individual config attributes wil
 Execution steps:
 * Go into the AWS Console, S3 screen, open the raw bucket (`wildrydes-dev-raw` in this example)
 * Create a folder "rydebookings". This is because the data source is configured to expect its data to be ingressed into a folder with this name (just use the bucket settings for the new folder). 
-* Using the console, upload the file `DataSources/RydeBookings/rydebooking-1234567890.json` into this folder.
-* Confirm the file has appeared in the staging folder, with a path similar to: `wildrydes-dev-staging/rydebookings/2018/10/26/rydebooking-1234567890.json`
+* Using the console, upload the file `DataSources/sampleData/LOAD0000001.csv` into this folder.
+* Confirm the file has appeared in the staging folder, with a path similar to: `wildrydes-dev-staging/co/database/schema/table/2018-10-26/LOAD0000001.parquet`
 
 If the file is not in the staging folder, one of the earlier steps has been executed incorrectly.
-
-### 4.3 Optional. Ingress a sample file that has an incorrect schema
-Execution steps:
-* Go into the AWS Console, S3 screen, open the raw bucket (`wildrydes-dev-raw` in this example)
-* Create a folder "rydebookings" if it does not already exist.
-* Using the console, upload the file `DataSources/RydeBookings/rydebooking-2000000000.json` into this folder.
-* Confirm the file has appeared in the failed folder, with a path similar to: `wildrydes-dev-failed/rydebookings/rydebooking-2000000000.json`
-
 If the file is not in the failed folder, one of the earlier steps has been executed incorrectly.
 
 ## 5. Initialise and use Elasticsearch / Kibana
