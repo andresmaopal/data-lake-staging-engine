@@ -1,0 +1,294 @@
+{
+  "Comment": "State machine to manage the staging of new files added to the data lake",
+  "StartAt": "GetFileSettings",
+
+  "States": {
+    "GetFileSettings": {
+      "Type": "Task",
+      "Resource": "${GetFileSettingsArn}",
+      "Comment": "Load the settings for the new file's file type (data source)",
+      "Next": "CalculateMetaDataForFile",
+      "Catch": [
+          {
+             "ErrorEquals": ["GetFileSettingsException","Exception"],
+             "ResultPath": "$.error-info",
+             "Next": "CopyFileFromRawToFailed"
+          }
+       ],
+      "Retry" : [
+          {
+            "ErrorEquals": [
+              "Lambda.Unknown",
+              "Lambda.ServiceException",
+              "Lambda.AWSLambdaException",
+              "Lambda.SdkClientException"
+            ],
+            "IntervalSeconds": 2,
+            "MaxAttempts": 4,
+            "BackoffRate": 1.5
+          },
+          {
+            "ErrorEquals": [
+              "States.ALL"
+            ],
+            "IntervalSeconds": 2,
+            "MaxAttempts": 4,
+            "BackoffRate": 1.5
+          }
+      ]
+    },
+    "CalculateMetaDataForFile": {
+      "Type": "Task",
+      "Resource": "${CalculateMetaDataForFileArn}",
+      "Comment": "Attach the required tags and metadata to the new file. ",
+      "Next": "CopyFileFromRawToStaging",
+      "Catch": [
+          {
+             "ErrorEquals": ["CalculateMetaDataForFileException","Exception"],
+             "ResultPath": "$.error-info",
+             "Next": "CopyFileFromRawToFailed"
+          }
+       ],
+      "Retry" : [
+          {
+            "ErrorEquals": [
+              "Lambda.Unknown",
+              "Lambda.ServiceException",
+              "Lambda.AWSLambdaException",
+              "Lambda.SdkClientException"
+            ],
+            "IntervalSeconds": 2,
+            "MaxAttempts": 4,
+            "BackoffRate": 1.5
+          },
+          {
+            "ErrorEquals": [
+              "States.ALL"
+            ],
+            "IntervalSeconds": 2,
+            "MaxAttempts": 4,
+            "BackoffRate": 1.5
+          }
+      ]
+    },
+    "CopyFileFromRawToStaging": {
+      "Type": "Task",
+      "Resource": "${CopyFileFromRawToStagingArn}",
+      "Comment": "Copy the new file, and its tags and metadata to the staging bucket.",
+      "Next": "WaitForRawBucketReadsToComplete",
+      "Catch": [
+          {
+             "ErrorEquals": ["CopyFileFromRawToStagingException","Exception"],
+             "ResultPath": "$.error-info",
+             "Next": "CopyFileFromRawToFailed"
+          }
+       ],
+      "Retry" : [
+          {
+            "ErrorEquals": [
+              "Lambda.Unknown",
+              "Lambda.ServiceException",
+              "Lambda.AWSLambdaException",
+              "Lambda.SdkClientException"
+            ],
+            "IntervalSeconds": 2,
+            "MaxAttempts": 4,
+            "BackoffRate": 1.5
+          },
+          {
+            "ErrorEquals": [
+              "States.ALL"
+            ],
+            "IntervalSeconds": 2,
+            "MaxAttempts": 4,
+            "BackoffRate": 1.5
+          }
+      ]
+    },
+    "WaitForRawBucketReadsToComplete": {
+      "Type": "Wait",
+      "Seconds": 20,
+      "Next": "DeleteRawFileAfterSuccessfulStaging"
+    },
+    "DeleteRawFileAfterSuccessfulStaging": {
+      "Type": "Task",
+      "Resource": "${DeleteRawFileArn}",
+      "Comment": "Deletes the file from the raw bucket.",
+      "Next": "RecordSuccessfulStaging",
+      "Catch": [
+          {
+             "ErrorEquals": ["DeleteRawFileException","Exception"],
+             "ResultPath": "$.error-info",
+             "Next": "CopyFileFromRawToFailed"
+          }
+       ],
+      "Retry" : [
+          {
+            "ErrorEquals": [
+              "Lambda.Unknown",
+              "Lambda.ServiceException",
+              "Lambda.AWSLambdaException",
+              "Lambda.SdkClientException"
+            ],
+            "IntervalSeconds": 2,
+            "MaxAttempts": 4,
+            "BackoffRate": 1.5
+          },
+          {
+            "ErrorEquals": [
+              "States.ALL"
+            ],
+            "IntervalSeconds": 2,
+            "MaxAttempts": 4,
+            "BackoffRate": 1.5
+          }
+      ]
+    },              
+    "RecordSuccessfulStaging": {
+      "Type": "Task",
+      "Resource": "${RecordSuccessfulStagingArn}",
+      "Comment": "Record successful staging and sync the DynamoDB and Glue Data Catalog",
+      "Next": "FinishedProcessingSuccessfulFile",
+      "Catch": [
+          {
+             "ErrorEquals": ["RecordSuccessfulStagingException","Exception"],
+             "ResultPath": "$.error-info",
+             "Next": "CopyFileFromRawToFailed"
+          }
+       ],
+      "Retry" : [
+          {
+            "ErrorEquals": [
+              "Lambda.Unknown",
+              "Lambda.ServiceException",
+              "Lambda.AWSLambdaException",
+              "Lambda.SdkClientException"
+            ],
+            "IntervalSeconds": 2,
+            "MaxAttempts": 4,
+            "BackoffRate": 1.5
+          },
+          {
+            "ErrorEquals": [
+              "States.ALL"
+            ],
+            "IntervalSeconds": 2,
+            "MaxAttempts": 4,
+            "BackoffRate": 1.5
+          }
+      ]
+    },                 
+    "CopyFileFromRawToFailed": {
+      "Type": "Task",
+      "Resource": "${CopyFileFromRawToFailedArn}",
+      "Comment": "Copy files that have failed ingress from the raw to failed bucket.",
+      "Next": "DeleteRawFileAfterFailedStaging",
+      "Catch": [
+          {
+             "ErrorEquals": ["CopyFileFromRawToFailedException","Exception"],
+             "ResultPath": "$.error-info",
+             "Next": "RecordFailedStaging"
+          }
+       ],
+      "Retry" : [
+            {
+            "ErrorEquals": [
+              "Lambda.Unknown",
+              "Lambda.ServiceException",
+              "Lambda.AWSLambdaException",
+              "Lambda.SdkClientException"
+            ],
+            "IntervalSeconds": 2,
+            "MaxAttempts": 4,
+            "BackoffRate": 1.5
+          },
+          {
+            "ErrorEquals": [
+              "States.ALL"
+            ],
+            "IntervalSeconds": 2,
+            "MaxAttempts": 4,
+            "BackoffRate": 1.5
+          }
+      ]
+    },
+    "DeleteRawFileAfterFailedStaging": {
+      "Type": "Task",
+      "Resource": "${DeleteRawFileArn}",
+      "Comment": "Deletes the file from the raw bucket.",
+      "Next": "RecordFailedStaging",
+      "Catch": [
+          {
+             "ErrorEquals": ["DeleteRawFileException","Exception"],
+             "ResultPath": "$.error-info",
+             "Next": "RecordFailedStaging"
+          }
+       ],
+      "Retry" : [
+          {
+            "ErrorEquals": [
+              "Lambda.Unknown",
+              "Lambda.ServiceException",
+              "Lambda.AWSLambdaException",
+              "Lambda.SdkClientException"
+            ],
+            "IntervalSeconds": 2,
+            "MaxAttempts": 4,
+            "BackoffRate": 1.5
+          },
+          {
+            "ErrorEquals": [
+              "States.ALL"
+            ],
+            "IntervalSeconds": 2,
+            "MaxAttempts": 4,
+            "BackoffRate": 1.5
+          }
+      ]
+    },                
+    "RecordFailedStaging": {
+      "Type": "Task",
+      "Resource": "${RecordFailedStagingArn}",
+      "Comment": "Record failed staging in Data Catalog",
+      "Next": "FinishedProcessingUnsuccessfulFile",
+      "Catch": [
+          {
+             "ErrorEquals": ["RecordFailedStagingException","Exception"],
+             "ResultPath": "$.error-info",
+             "Next": "FinishedProcessingUnsuccessfulFile"
+          }
+       ],
+      "Retry" : [
+          {
+            "ErrorEquals": [
+              "Lambda.Unknown",
+              "Lambda.ServiceException",
+              "Lambda.AWSLambdaException",
+              "Lambda.SdkClientException"
+            ],
+            "IntervalSeconds": 2,
+            "MaxAttempts": 4,
+            "BackoffRate": 1.5
+          },
+          {
+            "ErrorEquals": [
+              "States.ALL"
+            ],
+            "IntervalSeconds": 2,
+            "MaxAttempts": 4,
+            "BackoffRate": 1.5
+          }
+      ]
+    },                                 
+    "FinishedProcessingUnsuccessfulFile": {
+      "Type": "Pass",
+      "Result": "Fail",
+      "End": true
+    },
+    "FinishedProcessingSuccessfulFile": {
+      "Type": "Pass",
+      "Result": "Success",
+      "End": true
+    }
+  }
+}
