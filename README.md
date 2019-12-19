@@ -80,7 +80,7 @@ sam package --template-file ./lambdaDeploy.yaml --output-template-file lambdaDep
 sam deploy --template-file lambdaDeployCFN.yaml --stack-name octank-dev-datalake-elasticsearch-lambdas --capabilities CAPABILITY_IAM --parameter-overrides EnvironmentPrefix=wildrydes-dev-
 ````
 
-## 3. Provision the Staging and Data Catalog Engine and add an S3 trigger
+## 3. Provision the Staging and Data Catalog engine and add an S3 trigger
 This is the workhorse of the Staging engine - it creates lambdas and a step function, that takes new files dropped into the raw bucket, verifies their source and schema, applies tags and metadata, then copies the file to the staging bucket.
 
 On both success and failure, Staging engine updates the DataCatalog table in DynamoDB. All changes to this table are sent to elasticsearch, allowing users to see the full history of all imports and see what input files were used in each DataLake query.
