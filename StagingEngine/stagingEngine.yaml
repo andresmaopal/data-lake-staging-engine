@@ -73,6 +73,29 @@ Resources:
                   - dynamodb:GetRecords
                 Resource: "*"
 
+  GlueOpsServiceRole:
+    Type: "AWS::IAM::Role"
+    Properties:
+      ManagedPolicyArns:
+        - 'arn:aws:iam::aws:policy/service-role/AWSGlueServiceRole'  
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: "Allow"
+            Principal:
+              Service:
+                - lambda.amazonaws.com
+                - glue.amazonaws.com
+              AWS:
+                !Join
+                  - ''
+                  - - Fn::ImportValue: !Sub "${EnvironmentPrefix}DataLake-S3Raw-Arn"            
+                  - /*
+
+            Action: "sts:AssumeRole"
+      Path: "/"
+
   LambdaFailedFileProcessorRole:
     Type: "AWS::IAM::Role"
     Properties:
@@ -303,18 +326,7 @@ Resources:
             Action:
             - iam:PassRole
             Resource: arn:aws:*
-          - Sid: sqspolicy
-            Effect: Allow
-            Action:
-            - sqs:DeleteMessage
-            - sqs:ListQueues
-            - sqs:ReceiveMessage
-            - sqs:SendMessage
-            - sqs:GetQueueAttributes
-            Resource:
-            - Fn::GetAtt:
-              - SQSqueue
-              - Arn
+
 
   CopyFileFromRawToFailed:
     Type: 'AWS::Serverless::Function'
