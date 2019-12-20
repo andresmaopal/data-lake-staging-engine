@@ -6,7 +6,7 @@ A packaged Data Lake solution to partition the data in a Raw bucket, copy the da
 
 As its designed for multi-country support, the expected naming convention for the data lake is:
 
-`octank-dev-raw/landing/country_code/database_name/schema_name/table_name/` where `landing/` will be the folder where the ingestion service (like AWS Database Migration Service)  will be writing.
+`octank-dev-raw/landing/country_code/database_name/schema_name/table_name/` where `landing/` is the folder where the ingestion service (like AWS Database Migration Service) will be writing.
 
 This project is forked and customized based on [AWS Accelerated Data Lake](https://github.com/aws-samples/accelerated-data-lake)
 
