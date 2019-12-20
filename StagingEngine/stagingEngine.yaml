@@ -73,6 +73,7 @@ Resources:
                   - dynamodb:GetRecords
                 Resource: "*"
 
+  # Role to be passed by the RecordSuccessfulStaging Lambda in order to sync the crawler
   GlueOpsServiceRole:
     Type: "AWS::IAM::Role"
     Properties:
@@ -156,7 +157,7 @@ Resources:
                   - logs:*
                 Resource: "*"                              
 
-  # SAM Serverless (Lambda) functions
+  # SAM Serverless (Lambda) list of functions :
   StartFileProcessing:
     Type: 'AWS::Serverless::Function'
     Properties:
