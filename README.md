@@ -8,7 +8,6 @@ As its designed for multi-country support, the expected naming convention for th
 
 `octank-dev-raw/landing/country_code/database_name/schema_name/table_name/` where `landing/` is the folder where the ingestion service (like AWS Database Migration Service) will be writing.
 
-This project is forked and customized based on [AWS Accelerated Data Lake](https://github.com/aws-samples/accelerated-data-lake)
 
 ## License
 
@@ -157,3 +156,7 @@ Execution steps:
 * Click "Next step"
 * Select `@Timestamp` in the "Time Filter field name" field - this is very important, otherwise you will not get the excellent kibana timeline.
 * Click "Create Index Pattern" and the index will be created. Click on the Discover tab to see your data catalog and details of your failed and successful ingress. 
+
+-----
+
+This project is forked and customized based on [AWS Accelerated Data Lake](https://github.com/aws-samples/accelerated-data-lake)
