@@ -1,10 +1,13 @@
 # AWS S3 event-based Staging and Data Catalog engine
 
-  ![image text](https://raw.githubusercontent.com/andresmaopal/data-lake-staging-engine/master/Resources/diagrama_arquitectura.png)
+  ![image text](https://raw.githubusercontent.com/andresmaopal/data-lake-staging-engine/master/Resources/diagrama_arquitectura_small.png)
 
-A packaged Data Lake solution to repartition the data in a Raw bucket, create datasets in parquet on an Staging bucket, Syncs the Glue Catalog Databases, Glue Crawlers and Data Stores building a highly functional Data Lake, with a data catalog queryable via Elasticsearch (optional)
+A packaged Data Lake solution to partition the data in a Raw bucket, copy the datasets in parquet on an Staging bucket, Sync the Glue Catalog Databases, Glue Crawlers and Data Stores building a highly functional Data Lake, with a complimentary metadata Data catalog queryable via Elasticsearch (optional)
 
-Project forked and customized based on [AWS Accelerated Data Lake](https://github.com/aws-samples/accelerated-data-lake)
+As its designed for multi-country support, the expected naming convention for the data lake is:
+
+`octank-dev-raw/landing/country_code/database_name/schema_name/table_name/` where `landing/` is the folder where the ingestion service (like AWS Database Migration Service) will be writing.
+
 
 ## License
 
@@ -57,8 +60,8 @@ NOTE: Elasticsearch is a very easy service to over-provision. To assist in deter
 Execution steps:
 * Go to the CloudFormation section of the AWS Console.
 * Create a new stack using the template `/Visualisation/elasticsearch/elasticsearch.yaml`
-* Enter the stack name. For example: `wildrydes-dev-datalake-elasticsearch`
-* Enter the environment prefix, in this case: `wildrydes-dev-`
+* Enter the stack name. For example: `octank-dev-datalake-elasticsearch`
+* Enter the environment prefix, in this case: `octank-dev-`
 * Enter the your ip addresses (comma separated), in this case: `<your_ip/32>,<another_cidr>`
 * Change the other parameters as per requirements / best practise. The default values will provision a single instance `t2.medium` node - this is adequate for low tps dev and testing.
 
@@ -153,3 +156,7 @@ Execution steps:
 * Click "Next step"
 * Select `@Timestamp` in the "Time Filter field name" field - this is very important, otherwise you will not get the excellent kibana timeline.
 * Click "Create Index Pattern" and the index will be created. Click on the Discover tab to see your data catalog and details of your failed and successful ingress. 
+
+-----
+
+This project is forked and customized based on [AWS Accelerated Data Lake](https://github.com/aws-samples/accelerated-data-lake)
