@@ -225,6 +225,15 @@ Resources:
       Timeout: 600
       Role: !GetAtt [ LambdaExecutionRole, Arn ]
 
+  DataWranglerLayer:
+    Type: AWS::Lambda::LayerVersion
+    Properties:
+      Content:
+        S3Bucket: lambda-layer-scripts
+        S3Key: awswrangler-layer-0.0.23-py3.6.zip
+      Description: 'AWS Data Wrangler Lambda Layer'
+      LayerName: data-wrangler-layer
+
   CopyFileFromRawToStaging:
     Type: 'AWS::Serverless::Function'
     Properties:
@@ -235,6 +244,8 @@ Resources:
       MemorySize: 1408
       Timeout: 1000
       Role: !GetAtt [ LambdaExecutionRole, Arn]
+      Layers: !Ref DataWranglerLayer 
+      DependsOn: DataWranglerLayer
       Policies:
         - GlueS3RolePolicy:
           Statement:
@@ -286,23 +297,13 @@ Resources:
               Fn::ImportValue:
                 !Sub "${EnvironmentPrefix}DataLake-DataCatalogTableName"
         - SNSPublishMessagePolicy:
-            TopicName: '*'
-              - PolicyName: LambdaExecutionRole
+            TopicName: '*'        # Error 1 - falla al ejecutar el SAM
         - GlueCrawlerRolePolicy:
           Statement:
           - Sid: gluePermissions
             Effect: Allow
             Action:
-            - glue:CreateJob
-            - glue:CreateTable
-            - glue:StartCrawler
-            - glue:CreateDatabase
-            - glue:StartJobRun
-            - glue:StopCrawler
-            - glue:CreatePartition
-            - glue:GetJob
-            - glue:StartTrigger
-            - glue:CreateCrawler
+            - glue:*
             Resource: "*"
         - IAM_PassPolicy:
           Statement:
