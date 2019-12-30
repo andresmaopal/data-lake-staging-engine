@@ -1,12 +1,12 @@
 {
     "crawlerSettings": {
       "glueRoleName": "GlueOpsServiceRole",
-      "stagingDatabasePrefix": "rappi_staging"
+      "stagingDatabasePrefix": "customer_staging"
       },
     "fileSettings": {
       "fileFormat": "csv",
       "calculateMD5": "False",
-      "stagingFolderPath": "amazon_reviews",
+      "stagingFolderPath": "customer_reviews",
       "stagingPartitionSettings": {
         "expression": "dt=%Y-%m-%d",
         "timezone": "America/Bogota"
@@ -19,7 +19,7 @@
       "sourcesystem": "RDS Postgres"
     },
     "tags": {
-      "dataOwner": "Rappi",
+      "dataOwner": "Customer",
       "pii": "FALSE"
     }
 }
