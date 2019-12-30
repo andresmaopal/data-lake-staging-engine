@@ -1,0 +1,591 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: Creates the Staging Engine component of the Data Lake.
+Resources:
+  FileProcessingFailureSNS:
+    Type: AWS::SNS::Topic
+    Properties:
+      DisplayName: SNS topic that file processing failure notifications are sent to.
+      TopicName:
+        Fn::Sub: ${EnvironmentPrefix}${FileProcessingFailureTopicName}
+  LambdaExecutionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+        - Effect: Allow
+          Principal:
+            Service:
+            - lambda.amazonaws.com
+          Action: sts:AssumeRole
+      Path: /
+      Policies:
+      - PolicyName: S3GetPutTag
+        PolicyDocument:
+          Version: '2012-10-17'
+          Statement:
+          - Effect: Allow
+            Action:
+            - s3:PutObject
+            - s3:GetObject
+            - s3:GetObjectVersionTagging
+            - s3:GetObjectTagging
+            - s3:PutObjectTagging
+            - s3:PutObjectAcl
+            Resource: '*'
+      - PolicyName: KMSBasic
+        PolicyDocument:
+          Version: '2012-10-17'
+          Statement:
+          - Effect: Allow
+            Action:
+            - kms:Decrypt
+            - kms:Encrypt
+            - kms:PutKeyPolicy
+            - kms:GenerateDataKey
+            Resource: '*'
+      - PolicyName: Logs
+        PolicyDocument:
+          Version: '2012-10-17'
+          Statement:
+          - Effect: Allow
+            Action:
+            - logs:*
+            Resource: '*'
+      - PolicyName: DDBGetPutScan
+        PolicyDocument:
+          Version: '2012-10-17'
+          Statement:
+          - Effect: Allow
+            Action:
+            - dynamodb:BatchWriteItem
+            - dynamodb:GetItem
+            - dynamodb:PutItem
+            - dynamodb:GetShardIterator
+            - dynamodb:Scan
+            - dynamodb:Query
+            - dynamodb:UpdateItem
+            - dynamodb:DescribeStream
+            - dynamodb:UpdateTable
+            - dynamodb:GetRecords
+            Resource: '*'
+  GlueOpsServiceRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+        - Effect: Allow
+          Principal:
+            Service:
+            - lambda.amazonaws.com
+            - glue.amazonaws.com
+            AWS:
+              Fn::GetAtt:
+              - LambdaExecutionRole
+              - Arn
+          Action: sts:AssumeRole
+      Path: /
+  LambdaGlueCrawlerRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+        - Effect: Allow
+          Principal:
+            Service:
+            - lambda.amazonaws.com
+          Action: sts:AssumeRole
+      Path: /
+      Policies:
+      - PolicyName: IAMPassRolePolicy
+        PolicyDocument:
+          Version: '2012-10-17'
+          Statement:
+          - Effect: Allow
+            Action:
+            - iam:PassRole
+            - sts:*
+            Resource: '*'
+      - PolicyName: LogsPolicy
+        PolicyDocument:
+          Version: '2012-10-17'
+          Statement:
+          - Effect: Allow
+            Action:
+            - logs:CreateLogGroup
+            - logs:CreateLogStream
+            - logs:PutLogEvents
+            Resource: '*'
+      - PolicyName: SNSPublishPolicy
+        PolicyDocument:
+          Version: '2012-10-17'
+          Statement:
+          - Effect: Allow
+            Action:
+            - sns:publish
+            Resource: '*'
+      - PolicyName: GluePolicy
+        PolicyDocument:
+          Version: '2012-10-17'
+          Statement:
+          - Effect: Allow
+            Action:
+            - glue:*
+            Resource: '*'
+  LambdaFailedFileProcessorRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+        - Effect: Allow
+          Principal:
+            Service:
+            - lambda.amazonaws.com
+          Action: sts:AssumeRole
+      Path: /
+      Policies:
+      - PolicyName: S3AccessForFailedFileProcessorRole
+        PolicyDocument:
+          Version: '2012-10-17'
+          Statement:
+          - Effect: Allow
+            Action:
+            - s3:PutObject
+            - s3:PutObjectTagging
+            Resource:
+              Fn::Join:
+              - ''
+              - - Fn::ImportValue:
+                    Fn::Sub: ${EnvironmentPrefix}DataLake-S3Failed-Arn
+                - /*
+          - Effect: Allow
+            Action:
+            - s3:GetObject
+            - s3:GetObjectVersionTagging
+            - s3:GetObjectTagging
+            - s3:DeleteObject
+            Resource:
+              Fn::Join:
+              - ''
+              - - Fn::ImportValue:
+                    Fn::Sub: ${EnvironmentPrefix}DataLake-S3Raw-Arn
+                - /*
+          - Effect: Allow
+            Action:
+            - s3:ListBucket
+            Resource:
+            - Fn::ImportValue:
+                Fn::Sub: ${EnvironmentPrefix}DataLake-S3Raw-Arn
+            - Fn::ImportValue:
+                Fn::Sub: ${EnvironmentPrefix}DataLake-S3Failed-Arn
+      - PolicyName: KMSBasic
+        PolicyDocument:
+          Version: '2012-10-17'
+          Statement:
+          - Effect: Allow
+            Action:
+            - kms:Decrypt
+            - kms:Encrypt
+            - kms:PutKeyPolicy
+            - kms:GenerateDataKey
+            Resource: '*'
+      - PolicyName: Logs
+        PolicyDocument:
+          Version: '2012-10-17'
+          Statement:
+          - Effect: Allow
+            Action:
+            - logs:*
+            Resource: '*'
+  StartFileProcessing:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: startFileProcessing.lambda_handler
+      Runtime: python3.6
+      CodeUri: s3://hgtlake-devstagingenginecodepackages/f6dfdfa56e2326c36a7f45fa09aa5c24
+      Description: Initiates File Processing Step Function. This is triggered when
+        new file put into RAW bucket.
+      MemorySize: 128
+      Timeout: 300
+      Policies:
+      - arn:aws:iam::aws:policy/AWSStepFunctionsFullAccess
+      - DynamoDBCrudPolicy:
+          TableName:
+            Fn::ImportValue:
+              Fn::Sub: ${EnvironmentPrefix}DataLake-S3FileProcessingCacheTableName
+      - DynamoDBCrudPolicy:
+          TableName:
+            Fn::ImportValue:
+              Fn::Sub: ${EnvironmentPrefix}DataLake-DataCatalogTableName
+      - SNSPublishMessagePolicy:
+          TopicName:
+            Fn::Sub: ${EnvironmentPrefix}${FileProcessingFailureTopicName}
+      Environment:
+        Variables:
+          DATA_CATALOG_TABLE_NAME:
+            Fn::ImportValue:
+              Fn::Sub: ${EnvironmentPrefix}DataLake-DataCatalogTableName
+          DATA_SOURCE_TABLE_NAME:
+            Fn::ImportValue:
+              Fn::Sub: ${EnvironmentPrefix}DataLake-DataSourceTableName
+          S3_CACHE_TABLE_NAME:
+            Fn::ImportValue:
+              Fn::Sub: ${EnvironmentPrefix}DataLake-S3FileProcessingCacheTableName
+          SNS_FAILURE_ARN:
+            Ref: FileProcessingFailureSNS
+          STEP_FUNCTION:
+            Ref: FileProcessor
+          STAGING_BUCKET_NAME:
+            Fn::ImportValue:
+              Fn::Sub: ${EnvironmentPrefix}DataLake-S3Staging-Name
+          RAW_BUCKET_NAME:
+            Fn::ImportValue:
+              Fn::Sub: ${EnvironmentPrefix}DataLake-S3Raw-Name
+          FAILED_BUCKET_NAME:
+            Fn::ImportValue:
+              Fn::Sub: ${EnvironmentPrefix}DataLake-S3Failed-Name
+    DependsOn: FileProcessor
+  GetFileSettings:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: getFileSettings.lambda_handler
+      Runtime: python3.6
+      CodeUri: s3://hgtlake-devstagingenginecodepackages/0cb213c47e48a608c63454443dde5302
+      Description: Load the settings for the new file's file type (data source)
+      MemorySize: 128
+      Timeout: 300
+      Role:
+        Fn::GetAtt:
+        - LambdaExecutionRole
+        - Arn
+  CalculateMetaDataForFile:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: calculateMetaDataForFile.lambda_handler
+      Runtime: python3.6
+      CodeUri: s3://hgtlake-devstagingenginecodepackages/10863b939514269a47cbcdc5fc3e27e3
+      Description: Attach the required tags and metadata to the new file.
+      MemorySize: 128
+      Timeout: 600
+      Role:
+        Fn::GetAtt:
+        - LambdaExecutionRole
+        - Arn
+  DataWranglerLayer:
+    Type: AWS::Lambda::LayerVersion
+    Properties:
+      Content:
+        S3Bucket: aws-s3-lambda-layer-datawrangler
+        S3Key: awswrangler-layer-0.0.23-py3.6.zip
+      Description: AWS Data Wrangler Lambda Layer
+      LayerName: data-wrangler-layer
+  CopyFileFromRawToStaging:
+    Type: AWS::Serverless::Function
+    DependsOn: DataWranglerLayer
+    Properties:
+      Handler: copyFileFromRawToStaging.lambda_handler
+      Runtime: python3.6
+      CodeUri: s3://hgtlake-devstagingenginecodepackages/f2ffa3d010dc108a3739dfff7de0afac
+      Description: Copy the new file partitioned, and its tags and metadata to the
+        staging bucket in parquet.
+      MemorySize: 1408
+      Timeout: 900
+      Role:
+        Fn::GetAtt:
+        - LambdaExecutionRole
+        - Arn
+      Layers:
+      - Ref: DataWranglerLayer
+      Policies:
+      - GlueS3RolePolicy: null
+        Statement:
+        - Sid: gluePermissions
+          Effect: Allow
+          Action:
+          - glue:CreateJob
+          - glue:CreateTable
+          - glue:StartCrawler
+          - glue:CreateDatabase
+          - glue:StartJobRun
+          - glue:StopCrawler
+          - glue:CreatePartition
+          - glue:GetJob
+          - glue:StartTrigger
+          - glue:CreateCrawler
+          Resource: '*'
+      - IAM_PassRole: null
+        Statement:
+        - Sid: iamroles
+          Effect: Allow
+          Action:
+          - iam:PassRole
+          Resource: arn:aws:*
+  DeleteRawFile:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: deleteRawFile.lambda_handler
+      Runtime: python3.6
+      CodeUri: s3://hgtlake-devstagingenginecodepackages/e5aa43fb816fa5d5887f08647ec4aeda
+      Description: Deletes the raw file after successful or failed staging.
+      MemorySize: 128
+      Timeout: 600
+      Role:
+        Fn::GetAtt:
+        - LambdaFailedFileProcessorRole
+        - Arn
+  RecordSuccessfulStaging:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: recordSuccessfulStaging.lambda_handler
+      Runtime: python3.6
+      CodeUri: s3://hgtlake-devstagingenginecodepackages/0f78d7355ead5b534e29c31c54eb2c10
+      Description: Records successful staging in the data lake data catalog, and sends
+        success SNS if configured.
+      MemorySize: 128
+      Timeout: 300
+      Role:
+        Fn::GetAtt:
+        - LambdaGlueCrawlerRole
+        - Arn
+      Policies:
+      - DynamoDBCrudPolicy:
+          TableName:
+            Fn::ImportValue:
+              Fn::Sub: ${EnvironmentPrefix}DataLake-DataCatalogTableName
+  CopyFileFromRawToFailed:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: copyFileFromRawToFailed.lambda_handler
+      Runtime: python3.6
+      CodeUri: s3://hgtlake-devstagingenginecodepackages/d2a06511aeda214988d65463d45dab3b
+      Description: Copy files that have failed ingress from the raw to failed bucket.
+      MemorySize: 128
+      Timeout: 600
+      Role:
+        Fn::GetAtt:
+        - LambdaFailedFileProcessorRole
+        - Arn
+  RecordFailedStaging:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: recordFailedStaging.lambda_handler
+      Runtime: python3.6
+      CodeUri: s3://hgtlake-devstagingenginecodepackages/0e3d873ee6dcac65bcc3427894ba0a20
+      Description: Records failed staging in the data lake data catalog, and sends
+        failure SNS if configured.
+      MemorySize: 128
+      Timeout: 300
+      Policies:
+      - DynamoDBCrudPolicy:
+          TableName:
+            Fn::ImportValue:
+              Fn::Sub: ${EnvironmentPrefix}DataLake-DataCatalogTableName
+      - SNSPublishMessagePolicy:
+          TopicName: '*'
+  StatesExecutionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+        - Effect: Allow
+          Principal:
+            Service:
+            - Fn::Sub: states.${AWS::Region}.amazonaws.com
+          Action: sts:AssumeRole
+      Path: /
+      Policies:
+      - PolicyName: StatesExecutionPolicy
+        PolicyDocument:
+          Version: '2012-10-17'
+          Statement:
+          - Effect: Allow
+            Action:
+            - lambda:InvokeFunction
+            Resource: '*'
+  FileProcessor:
+    Type: AWS::StepFunctions::StateMachine
+    Properties:
+      StateMachineName:
+        Fn::Sub: ${EnvironmentPrefix}stagingengine
+      DefinitionString:
+        Fn::Sub:
+        - "{\n  \"Comment\": \"State machine to manage the staging of new files added\
+          \ to the data lake\",\n  \"StartAt\": \"GetFileSettings\",\n\n  \"States\"\
+          : {\n    \"GetFileSettings\": {\n      \"Type\": \"Task\",\n      \"Resource\"\
+          : \"${GetFileSettingsArn}\",\n      \"Comment\": \"Load the settings for\
+          \ the new file's file type (data source)\",\n      \"Next\": \"CalculateMetaDataForFile\"\
+          ,\n      \"Catch\": [\n          {\n             \"ErrorEquals\": [\"GetFileSettingsException\"\
+          ,\"Exception\"],\n             \"ResultPath\": \"$.error-info\",\n     \
+          \        \"Next\": \"CopyFileFromRawToFailed\"\n          }\n       ],\n\
+          \      \"Retry\" : [\n          {\n            \"ErrorEquals\": [\n    \
+          \          \"Lambda.Unknown\",\n              \"Lambda.ServiceException\"\
+          ,\n              \"Lambda.AWSLambdaException\",\n              \"Lambda.SdkClientException\"\
+          \n            ],\n            \"IntervalSeconds\": 2,\n            \"MaxAttempts\"\
+          : 4,\n            \"BackoffRate\": 1.5\n          },\n          {\n    \
+          \        \"ErrorEquals\": [\n              \"States.ALL\"\n            ],\n\
+          \            \"IntervalSeconds\": 2,\n            \"MaxAttempts\": 4,\n\
+          \            \"BackoffRate\": 1.5\n          }\n      ]\n    },\n    \"\
+          CalculateMetaDataForFile\": {\n      \"Type\": \"Task\",\n      \"Resource\"\
+          : \"${CalculateMetaDataForFileArn}\",\n      \"Comment\": \"Attach the required\
+          \ tags and metadata to the new file. \",\n      \"Next\": \"CopyFileFromRawToStaging\"\
+          ,\n      \"Catch\": [\n          {\n             \"ErrorEquals\": [\"CalculateMetaDataForFileException\"\
+          ,\"Exception\"],\n             \"ResultPath\": \"$.error-info\",\n     \
+          \        \"Next\": \"CopyFileFromRawToFailed\"\n          }\n       ],\n\
+          \      \"Retry\" : [\n          {\n            \"ErrorEquals\": [\n    \
+          \          \"Lambda.Unknown\",\n              \"Lambda.ServiceException\"\
+          ,\n              \"Lambda.AWSLambdaException\",\n              \"Lambda.SdkClientException\"\
+          \n            ],\n            \"IntervalSeconds\": 2,\n            \"MaxAttempts\"\
+          : 4,\n            \"BackoffRate\": 1.5\n          },\n          {\n    \
+          \        \"ErrorEquals\": [\n              \"States.ALL\"\n            ],\n\
+          \            \"IntervalSeconds\": 2,\n            \"MaxAttempts\": 4,\n\
+          \            \"BackoffRate\": 1.5\n          }\n      ]\n    },\n    \"\
+          CopyFileFromRawToStaging\": {\n      \"Type\": \"Task\",\n      \"Resource\"\
+          : \"${CopyFileFromRawToStagingArn}\",\n      \"Comment\": \"Copy the new\
+          \ file, and its tags and metadata to the staging bucket.\",\n      \"Next\"\
+          : \"WaitForRawBucketReadsToComplete\",\n      \"Catch\": [\n          {\n\
+          \             \"ErrorEquals\": [\"CopyFileFromRawToStagingException\",\"\
+          Exception\"],\n             \"ResultPath\": \"$.error-info\",\n        \
+          \     \"Next\": \"CopyFileFromRawToFailed\"\n          }\n       ],\n  \
+          \    \"Retry\" : [\n          {\n            \"ErrorEquals\": [\n      \
+          \        \"Lambda.Unknown\",\n              \"Lambda.ServiceException\"\
+          ,\n              \"Lambda.AWSLambdaException\",\n              \"Lambda.SdkClientException\"\
+          \n            ],\n            \"IntervalSeconds\": 2,\n            \"MaxAttempts\"\
+          : 4,\n            \"BackoffRate\": 1.5\n          },\n          {\n    \
+          \        \"ErrorEquals\": [\n              \"States.ALL\"\n            ],\n\
+          \            \"IntervalSeconds\": 2,\n            \"MaxAttempts\": 4,\n\
+          \            \"BackoffRate\": 1.5\n          }\n      ]\n    },\n    \"\
+          WaitForRawBucketReadsToComplete\": {\n      \"Type\": \"Wait\",\n      \"\
+          Seconds\": 20,\n      \"Next\": \"DeleteRawFileAfterSuccessfulStaging\"\n\
+          \    },\n    \"DeleteRawFileAfterSuccessfulStaging\": {\n      \"Type\"\
+          : \"Task\",\n      \"Resource\": \"${DeleteRawFileArn}\",\n      \"Comment\"\
+          : \"Deletes the file from the raw bucket.\",\n      \"Next\": \"RecordSuccessfulStaging\"\
+          ,\n      \"Catch\": [\n          {\n             \"ErrorEquals\": [\"DeleteRawFileException\"\
+          ,\"Exception\"],\n             \"ResultPath\": \"$.error-info\",\n     \
+          \        \"Next\": \"CopyFileFromRawToFailed\"\n          }\n       ],\n\
+          \      \"Retry\" : [\n          {\n            \"ErrorEquals\": [\n    \
+          \          \"Lambda.Unknown\",\n              \"Lambda.ServiceException\"\
+          ,\n              \"Lambda.AWSLambdaException\",\n              \"Lambda.SdkClientException\"\
+          \n            ],\n            \"IntervalSeconds\": 2,\n            \"MaxAttempts\"\
+          : 4,\n            \"BackoffRate\": 1.5\n          },\n          {\n    \
+          \        \"ErrorEquals\": [\n              \"States.ALL\"\n            ],\n\
+          \            \"IntervalSeconds\": 2,\n            \"MaxAttempts\": 4,\n\
+          \            \"BackoffRate\": 1.5\n          }\n      ]\n    },        \
+          \      \n    \"RecordSuccessfulStaging\": {\n      \"Type\": \"Task\",\n\
+          \      \"Resource\": \"${RecordSuccessfulStagingArn}\",\n      \"Comment\"\
+          : \"Record successful staging and sync the DynamoDB and Glue Data Catalog\"\
+          ,\n      \"Next\": \"FinishedProcessingSuccessfulFile\",\n      \"Catch\"\
+          : [\n          {\n             \"ErrorEquals\": [\"RecordSuccessfulStagingException\"\
+          ,\"Exception\"],\n             \"ResultPath\": \"$.error-info\",\n     \
+          \        \"Next\": \"CopyFileFromRawToFailed\"\n          }\n       ],\n\
+          \      \"Retry\" : [\n          {\n            \"ErrorEquals\": [\n    \
+          \          \"Lambda.Unknown\",\n              \"Lambda.ServiceException\"\
+          ,\n              \"Lambda.AWSLambdaException\",\n              \"Lambda.SdkClientException\"\
+          \n            ],\n            \"IntervalSeconds\": 2,\n            \"MaxAttempts\"\
+          : 4,\n            \"BackoffRate\": 1.5\n          },\n          {\n    \
+          \        \"ErrorEquals\": [\n              \"States.ALL\"\n            ],\n\
+          \            \"IntervalSeconds\": 2,\n            \"MaxAttempts\": 4,\n\
+          \            \"BackoffRate\": 1.5\n          }\n      ]\n    },        \
+          \         \n    \"CopyFileFromRawToFailed\": {\n      \"Type\": \"Task\"\
+          ,\n      \"Resource\": \"${CopyFileFromRawToFailedArn}\",\n      \"Comment\"\
+          : \"Copy files that have failed ingress from the raw to failed bucket.\"\
+          ,\n      \"Next\": \"DeleteRawFileAfterFailedStaging\",\n      \"Catch\"\
+          : [\n          {\n             \"ErrorEquals\": [\"CopyFileFromRawToFailedException\"\
+          ,\"Exception\"],\n             \"ResultPath\": \"$.error-info\",\n     \
+          \        \"Next\": \"RecordFailedStaging\"\n          }\n       ],\n   \
+          \   \"Retry\" : [\n            {\n            \"ErrorEquals\": [\n     \
+          \         \"Lambda.Unknown\",\n              \"Lambda.ServiceException\"\
+          ,\n              \"Lambda.AWSLambdaException\",\n              \"Lambda.SdkClientException\"\
+          \n            ],\n            \"IntervalSeconds\": 2,\n            \"MaxAttempts\"\
+          : 4,\n            \"BackoffRate\": 1.5\n          },\n          {\n    \
+          \        \"ErrorEquals\": [\n              \"States.ALL\"\n            ],\n\
+          \            \"IntervalSeconds\": 2,\n            \"MaxAttempts\": 4,\n\
+          \            \"BackoffRate\": 1.5\n          }\n      ]\n    },\n    \"\
+          DeleteRawFileAfterFailedStaging\": {\n      \"Type\": \"Task\",\n      \"\
+          Resource\": \"${DeleteRawFileArn}\",\n      \"Comment\": \"Deletes the file\
+          \ from the raw bucket.\",\n      \"Next\": \"RecordFailedStaging\",\n  \
+          \    \"Catch\": [\n          {\n             \"ErrorEquals\": [\"DeleteRawFileException\"\
+          ,\"Exception\"],\n             \"ResultPath\": \"$.error-info\",\n     \
+          \        \"Next\": \"RecordFailedStaging\"\n          }\n       ],\n   \
+          \   \"Retry\" : [\n          {\n            \"ErrorEquals\": [\n       \
+          \       \"Lambda.Unknown\",\n              \"Lambda.ServiceException\",\n\
+          \              \"Lambda.AWSLambdaException\",\n              \"Lambda.SdkClientException\"\
+          \n            ],\n            \"IntervalSeconds\": 2,\n            \"MaxAttempts\"\
+          : 4,\n            \"BackoffRate\": 1.5\n          },\n          {\n    \
+          \        \"ErrorEquals\": [\n              \"States.ALL\"\n            ],\n\
+          \            \"IntervalSeconds\": 2,\n            \"MaxAttempts\": 4,\n\
+          \            \"BackoffRate\": 1.5\n          }\n      ]\n    },        \
+          \        \n    \"RecordFailedStaging\": {\n      \"Type\": \"Task\",\n \
+          \     \"Resource\": \"${RecordFailedStagingArn}\",\n      \"Comment\": \"\
+          Record failed staging in Data Catalog\",\n      \"Next\": \"FinishedProcessingUnsuccessfulFile\"\
+          ,\n      \"Catch\": [\n          {\n             \"ErrorEquals\": [\"RecordFailedStagingException\"\
+          ,\"Exception\"],\n             \"ResultPath\": \"$.error-info\",\n     \
+          \        \"Next\": \"FinishedProcessingUnsuccessfulFile\"\n          }\n\
+          \       ],\n      \"Retry\" : [\n          {\n            \"ErrorEquals\"\
+          : [\n              \"Lambda.Unknown\",\n              \"Lambda.ServiceException\"\
+          ,\n              \"Lambda.AWSLambdaException\",\n              \"Lambda.SdkClientException\"\
+          \n            ],\n            \"IntervalSeconds\": 2,\n            \"MaxAttempts\"\
+          : 4,\n            \"BackoffRate\": 1.5\n          },\n          {\n    \
+          \        \"ErrorEquals\": [\n              \"States.ALL\"\n            ],\n\
+          \            \"IntervalSeconds\": 2,\n            \"MaxAttempts\": 4,\n\
+          \            \"BackoffRate\": 1.5\n          }\n      ]\n    },        \
+          \                         \n    \"FinishedProcessingUnsuccessfulFile\":\
+          \ {\n      \"Type\": \"Pass\",\n      \"Result\": \"Fail\",\n      \"End\"\
+          : true\n    },\n    \"FinishedProcessingSuccessfulFile\": {\n      \"Type\"\
+          : \"Pass\",\n      \"Result\": \"Success\",\n      \"End\": true\n    }\n\
+          \  }\n}"
+        - GetFileSettingsArn:
+            Fn::GetAtt:
+            - GetFileSettings
+            - Arn
+          CalculateMetaDataForFileArn:
+            Fn::GetAtt:
+            - CalculateMetaDataForFile
+            - Arn
+          RecordSuccessfulStagingArn:
+            Fn::GetAtt:
+            - RecordSuccessfulStaging
+            - Arn
+          CopyFileFromRawToStagingArn:
+            Fn::GetAtt:
+            - CopyFileFromRawToStaging
+            - Arn
+          CopyFileFromRawToFailedArn:
+            Fn::GetAtt:
+            - CopyFileFromRawToFailed
+            - Arn
+          DeleteRawFileArn:
+            Fn::GetAtt:
+            - DeleteRawFile
+            - Arn
+          RecordFailedStagingArn:
+            Fn::GetAtt:
+            - RecordFailedStaging
+            - Arn
+      RoleArn:
+        Fn::GetAtt:
+        - StatesExecutionRole
+        - Arn
+Parameters:
+  FileProcessingFailureTopicName:
+    Type: String
+    Default: datalake-staging-failure
+    Description: Please add a SNS topic name to receive failure notifications
+  EnvironmentPrefix:
+    Type: String
+    Description: Enter the environment prefix used for the DataLake structure (S3
+      Buckets and DynamoDB tables
+    MinLength: 3
+    MaxLength: 19
+    AllowedPattern: '[a-z][a-z0-9-]+'
+Metadata:
+  AWS::CloudFormation::Interface:
+    ParameterGroups:
+    - Label:
+        default: SNS Failure Notifications
+      Parameters:
+      - FileProcessingFailureTopicName

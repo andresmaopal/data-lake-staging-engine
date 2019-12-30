@@ -92,6 +92,55 @@ Resources:
             Action: "sts:AssumeRole"
       Path: "/"
 
+  LambdaGlueCrawlerRole:
+    Type: "AWS::IAM::Role"
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: "Allow"
+            Principal:
+              Service:
+                - lambda.amazonaws.com
+            Action: "sts:AssumeRole"
+      Path: "/"
+      Policies:                  
+        - PolicyName: IAMPassRolePolicy
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action:
+                  - iam:PassRole
+                  - sts:*
+                Resource: "*"              
+        - PolicyName: LogsPolicy
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action:
+                  - logs:CreateLogGroup
+                  - logs:CreateLogStream
+                  - logs:PutLogEvents
+                Resource: "*"                              
+        - PolicyName: SNSPublishPolicy
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action:
+                  - sns:publish
+                Resource: "*"   
+        - PolicyName: GluePolicy
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action:
+                  - glue:*
+                Resource: "*"   
+
   LambdaFailedFileProcessorRole:
     Type: "AWS::IAM::Role"
     Properties:
@@ -229,23 +278,24 @@ Resources:
     Type: AWS::Lambda::LayerVersion
     Properties:
       Content:
-        S3Bucket: lambda-layer-scripts
+        S3Bucket: aws-s3-lambda-layer-datawrangler
         S3Key: awswrangler-layer-0.0.23-py3.6.zip
       Description: 'AWS Data Wrangler Lambda Layer'
       LayerName: data-wrangler-layer
 
   CopyFileFromRawToStaging:
     Type: 'AWS::Serverless::Function'
+    DependsOn: DataWranglerLayer
     Properties:
       Handler: copyFileFromRawToStaging.lambda_handler
       Runtime: python3.6
       CodeUri: ./src/copyFileFromRawToStaging.py
       Description: Copy the new file partitioned, and its tags and metadata to the staging bucket in parquet.
       MemorySize: 1408
-      Timeout: 1000
+      Timeout: 900
       Role: !GetAtt [ LambdaExecutionRole, Arn]
-      Layers: !Ref DataWranglerLayer 
-      DependsOn: DataWranglerLayer
+      Layers: 
+        - !Ref DataWranglerLayer 
       Policies:
         - GlueS3RolePolicy:
           Statement:
@@ -291,34 +341,12 @@ Resources:
       Description: Records successful staging in the data lake data catalog, and sends success SNS if configured.
       MemorySize: 128
       Timeout: 300
+      Role: !GetAtt [ LambdaGlueCrawlerRole, Arn ]
       Policies:
         - DynamoDBCrudPolicy:
             TableName: 
               Fn::ImportValue:
                 !Sub "${EnvironmentPrefix}DataLake-DataCatalogTableName"
-        - SNSPublishMessagePolicy:
-            TopicName: '*'        # Error 1 - falla al ejecutar el SAM
-        - GlueCrawlerRolePolicy:
-          Statement:
-          - Sid: gluePermissions
-            Effect: Allow
-            Action:
-            - glue:*
-            Resource: "*"
-        - IAM_PassPolicy:
-          Statement:
-          - Sid: iamroles
-            Effect: Allow
-            Action:
-            - iam:PassRole
-            Resource: arn:aws:*
-        - LogRecordPolicy:
-          Statement:
-          - Sid: writelogs
-            Effect: Allow
-            Action:
-            - logs:*
-            Resource: arn:aws:logs:*:*:*
 
   CopyFileFromRawToFailed:
     Type: 'AWS::Serverless::Function'
