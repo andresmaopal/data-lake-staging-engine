@@ -158,7 +158,7 @@ Resources:
     Properties:
       Handler: startFileProcessing.lambda_handler
       Runtime: python3.6
-      CodeUri: s3://cdc-datalakeraw/8e148d8afe4616b2ad8d95405de45bce
+      CodeUri: s3://cdc-datalakeraw/836df6c4c8bdcd84382e7fb9e90c45b6
       Description: Initiates File Processing Step Function. This is triggered when
         new file put into RAW bucket.
       MemorySize: 128
@@ -206,7 +206,7 @@ Resources:
     Properties:
       Handler: getFileSettings.lambda_handler
       Runtime: python3.6
-      CodeUri: s3://cdc-datalakeraw/32404d2af2ee82a7221744dee2ca5d98
+      CodeUri: s3://cdc-datalakeraw/0dca49a9cfce461aba6061c537f80aed
       Description: Load the settings for the new file's file type (data source)
       MemorySize: 128
       Timeout: 300
@@ -219,7 +219,7 @@ Resources:
     Properties:
       Handler: calculateMetaDataForFile.lambda_handler
       Runtime: python3.6
-      CodeUri: s3://cdc-datalakeraw/cca2285fb3f08cdac5399ab7ea7c1a0a
+      CodeUri: s3://cdc-datalakeraw/5ecde5942cf765d5989dfc0cac93dba6
       Description: Attach the required tags and metadata to the new file.
       MemorySize: 128
       Timeout: 600
@@ -232,7 +232,7 @@ Resources:
     Properties:
       Handler: copyFileFromRawToStaging.lambda_handler
       Runtime: python3.6
-      CodeUri: s3://cdc-datalakeraw/d994c188096051b0d5af2253b7034876
+      CodeUri: s3://cdc-datalakeraw/2c7c077ddf57da98064097e7f6d2dc4c
       Description: Copy the new file partitioned, and its tags and metadata to the
         staging bucket in parquet.
       MemorySize: 1408
@@ -242,22 +242,23 @@ Resources:
         - LambdaExecutionRole
         - Arn
       Policies:
-      - GlueS3RolePolicy: null
-        Statement:
-        - Sid: gluePermissions
-          Effect: Allow
-          Action:
-          - glue:CreateJob
-          - glue:CreateTable
-          - glue:StartCrawler
-          - glue:CreateDatabase
-          - glue:StartJobRun
-          - glue:StopCrawler
-          - glue:CreatePartition
-          - glue:GetJob
-          - glue:StartTrigger
-          - glue:CreateCrawler
-          Resource: '*'
+      - PolicyName: GlueCatalogRolePolicy
+        PolicyDocument:
+          Version: '2012-10-17'
+          Statement:
+            Effect: Allow
+            Action:
+            - glue:CreateJob
+            - glue:CreateTable
+            - glue:StartCrawler
+            - glue:CreateDatabase
+            - glue:StartJobRun
+            - glue:StopCrawler
+            - glue:CreatePartition
+            - glue:GetJob
+            - glue:StartTrigger
+            - glue:CreateCrawler
+            Resource: '*'
       - IAM_PassRole: null
         Statement:
         - Sid: iamroles
@@ -270,7 +271,7 @@ Resources:
     Properties:
       Handler: deleteRawFile.lambda_handler
       Runtime: python3.6
-      CodeUri: s3://cdc-datalakeraw/5665afbb7b3487102c8f694b6127ab2a
+      CodeUri: s3://cdc-datalakeraw/9bae0e4d3d1ab38335a095bb06844f8c
       Description: Deletes the raw file after successful or failed staging.
       MemorySize: 128
       Timeout: 600
@@ -283,34 +284,29 @@ Resources:
     Properties:
       Handler: recordSuccessfulStaging.lambda_handler
       Runtime: python3.6
-      CodeUri: s3://cdc-datalakeraw/c54935ee030a85942e8dcc482f559ab2
+      CodeUri: s3://cdc-datalakeraw/f93b34647bcb3e0cdd5dfbc54bbdf076
       Description: Records successful staging in the data lake data catalog, and sends
         success SNS if configured.
       MemorySize: 128
       Timeout: 300
       Policies:
-      - DynamoDBCrudPolicy:
-          TableName:
-            Fn::ImportValue:
-              Fn::Sub: ${EnvironmentPrefix}DataLake-DataCatalogTableName
-      - SNSPublishMessagePolicy:
-          TopicName: '*'
-      - GlueCrawlerRolePolicy: null
-        Statement:
-        - Sid: gluePermissions
-          Effect: Allow
-          Action:
-          - glue:CreateJob
-          - glue:CreateTable
-          - glue:StartCrawler
-          - glue:CreateDatabase
-          - glue:StartJobRun
-          - glue:StopCrawler
-          - glue:CreatePartition
-          - glue:GetJob
-          - glue:StartTrigger
-          - glue:CreateCrawler
-          Resource: '*'
+      - PolicyName: GlueCrawlerRolePolicy
+        PolicyDocument:
+          Version: '2012-10-17'
+          Statement:
+            Effect: Allow
+            Action:
+            - glue:CreateJob
+            - glue:CreateTable
+            - glue:StartCrawler
+            - glue:CreateDatabase
+            - glue:StartJobRun
+            - glue:StopCrawler
+            - glue:CreatePartition
+            - glue:GetJob
+            - glue:StartTrigger
+            - glue:CreateCrawler
+            Resource: '*'
       - IAM_PassPolicy: null
         Statement:
         - Sid: iamroles
@@ -325,12 +321,18 @@ Resources:
           Action:
           - logs:*
           Resource: arn:aws:logs:*:*:*
+      - DynamoDBCrudPolicy:
+          TableName:
+            Fn::ImportValue:
+              Fn::Sub: ${EnvironmentPrefix}DataLake-DataCatalogTableName
+      - SNSPublishMessagePolicy:
+          TopicName: '*'
   CopyFileFromRawToFailed:
     Type: AWS::Serverless::Function
     Properties:
       Handler: copyFileFromRawToFailed.lambda_handler
       Runtime: python3.6
-      CodeUri: s3://cdc-datalakeraw/f2bfddf72bf144ea15f5ccf0a389afea
+      CodeUri: s3://cdc-datalakeraw/97597aff2428696d2c0a910ce4e0bca8
       Description: Copy files that have failed ingress from the raw to failed bucket.
       MemorySize: 128
       Timeout: 600
@@ -343,7 +345,7 @@ Resources:
     Properties:
       Handler: recordFailedStaging.lambda_handler
       Runtime: python3.6
-      CodeUri: s3://cdc-datalakeraw/55c7245908fa4a1deed21e5e2041f594
+      CodeUri: s3://cdc-datalakeraw/4a8f522c7e1a4edb17df6649d45a64b2
       Description: Records failed staging in the data lake data catalog, and sends
         failure SNS if configured.
       MemorySize: 128

@@ -236,22 +236,23 @@ Resources:
       Timeout: 1000
       Role: !GetAtt [ LambdaExecutionRole, Arn]
       Policies:
-        - GlueS3RolePolicy:
-          Statement:
-          - Sid: gluePermissions
-            Effect: Allow
-            Action:
-            - glue:CreateJob
-            - glue:CreateTable
-            - glue:StartCrawler
-            - glue:CreateDatabase
-            - glue:StartJobRun
-            - glue:StopCrawler
-            - glue:CreatePartition
-            - glue:GetJob
-            - glue:StartTrigger
-            - glue:CreateCrawler
-            Resource: "*"
+        - PolicyName: GlueCatalogRolePolicy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              Effect: Allow
+              Action:
+              - glue:CreateJob
+              - glue:CreateTable
+              - glue:StartCrawler
+              - glue:CreateDatabase
+              - glue:StartJobRun
+              - glue:StopCrawler
+              - glue:CreatePartition
+              - glue:GetJob
+              - glue:StartTrigger
+              - glue:CreateCrawler
+              Resource: "*"
         - IAM_PassRole:
           Statement:
           - Sid: iamroles
@@ -281,22 +282,23 @@ Resources:
       MemorySize: 128
       Timeout: 300
       Policies:
-        - GlueCrawlerRolePolicy:
-          Statement:
-          - Sid: gluePermissions
-            Effect: Allow
-            Action:
-            - glue:CreateJob
-            - glue:CreateTable
-            - glue:StartCrawler
-            - glue:CreateDatabase
-            - glue:StartJobRun
-            - glue:StopCrawler
-            - glue:CreatePartition
-            - glue:GetJob
-            - glue:StartTrigger
-            - glue:CreateCrawler
-            Resource: "*"
+        - PolicyName: GlueCrawlerRolePolicy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              Effect: Allow
+              Action:
+              - glue:CreateJob
+              - glue:CreateTable
+              - glue:StartCrawler
+              - glue:CreateDatabase
+              - glue:StartJobRun
+              - glue:StopCrawler
+              - glue:CreatePartition
+              - glue:GetJob
+              - glue:StartTrigger
+              - glue:CreateCrawler
+              Resource: "*"
         - IAM_PassPolicy:
           Statement:
           - Sid: iamroles
