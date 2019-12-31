@@ -287,7 +287,6 @@ Resources:
                 !Sub "${EnvironmentPrefix}DataLake-DataCatalogTableName"
         - SNSPublishMessagePolicy:
             TopicName: '*'
-              - PolicyName: LambdaExecutionRole
         - GlueCrawlerRolePolicy:
           Statement:
           - Sid: gluePermissions
