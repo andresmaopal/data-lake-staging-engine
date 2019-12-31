@@ -281,12 +281,6 @@ Resources:
       MemorySize: 128
       Timeout: 300
       Policies:
-        - DynamoDBCrudPolicy:
-            TableName: 
-              Fn::ImportValue:
-                !Sub "${EnvironmentPrefix}DataLake-DataCatalogTableName"
-        - SNSPublishMessagePolicy:
-            TopicName: '*'
         - GlueCrawlerRolePolicy:
           Statement:
           - Sid: gluePermissions
@@ -317,6 +311,12 @@ Resources:
             Action:
             - logs:*
             Resource: arn:aws:logs:*:*:*
+        - DynamoDBCrudPolicy:
+            TableName: 
+              Fn::ImportValue:
+                !Sub "${EnvironmentPrefix}DataLake-DataCatalogTableName"
+        - SNSPublishMessagePolicy:
+            TopicName: '*'
 
   CopyFileFromRawToFailed:
     Type: 'AWS::Serverless::Function'
