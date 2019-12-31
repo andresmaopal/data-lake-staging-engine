@@ -94,7 +94,7 @@ Execution steps:
 * Create a data lake IAM user, with CLI access.
 * Configure the AWS CLI with the user's access key and secret access key.
 * Install AWS SAM.
-(mandatory steps)
+(mandatory steps: https://docs.aws.amazon.com/serverless-application-model/latest/developerguide/serverless-sam-cli-install-linux.html)
 * Open a terminal / command line and move to the StagingEngine/ folder
 * Package and deploy the lambda functions. There are following two ways to deploy it:
         * Execute the `./deploy.sh <environment_prefix>` script OR
