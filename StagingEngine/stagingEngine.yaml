@@ -242,7 +242,7 @@ Resources:
       CodeUri: ./src/copyFileFromRawToStaging.py
       Description: Copy the new file partitioned, and its tags and metadata to the staging bucket in parquet.
       MemorySize: 1408
-      Timeout: 1000
+      Timeout: 900
       Role: !GetAtt [ LambdaExecutionRole, Arn]
       Policies:
         - GlueS3RolePolicy:
