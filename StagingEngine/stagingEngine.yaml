@@ -91,6 +91,15 @@ Resources:
               AWS: !GetAtt [ LambdaExecutionRole, Arn ]
             Action: "sts:AssumeRole"
       Path: "/"
+      Policies:
+      - PolicyName: IAM_PassRole
+        PolicyDocument:
+          Version: '2012-10-17'
+          Statement:
+            Effect: Allow
+            Action:
+            - iam:PassRole
+            Resource: arn:aws:*
 
   LambdaFailedFileProcessorRole:
     Type: "AWS::IAM::Role"
@@ -276,34 +285,12 @@ Resources:
     Properties:
       Handler: recordSuccessfulStaging.lambda_handler
       Runtime: python3.6
+      Role: !GetAtt GlueOpsServiceRole.Arn
       CodeUri: ./src/recordSuccessfulStaging.py
       Description: Records successful staging in the data lake data catalog, and sends success SNS if configured.
       MemorySize: 128
       Timeout: 300
       Policies:
-        - GlueCrawlerRolePolicy:
-          Statement:
-          - Sid: gluePermissions
-            Effect: Allow
-            Action:
-            - glue:CreateJob
-            - glue:CreateTable
-            - glue:StartCrawler
-            - glue:CreateDatabase
-            - glue:StartJobRun
-            - glue:StopCrawler
-            - glue:CreatePartition
-            - glue:GetJob
-            - glue:StartTrigger
-            - glue:CreateCrawler
-            Resource: "*"
-        - IAM_PassPolicy:
-          Statement:
-          - Sid: iamroles
-            Effect: Allow
-            Action:
-            - iam:PassRole
-            Resource: arn:aws:*
         - LogRecordPolicy:
           Statement:
           - Sid: writelogs
