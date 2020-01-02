@@ -1,4 +1,4 @@
-# AWS S3 event-based Staging and Data Catalog engine
+# S3 Data Lake event-based Staging + Data Catalog engine
 
   ![image text](https://raw.githubusercontent.com/andresmaopal/data-lake-staging-engine/master/Resources/diagrama_arquitectura_small.png)
 
