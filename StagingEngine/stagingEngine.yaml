@@ -99,7 +99,7 @@ Resources:
             Effect: Allow
             Action:
             - iam:PassRole
-            Resource: arn:aws:*
+            Resource: !GetAtt [ LambdaExecutionRole, Arn ]
 
   LambdaFailedFileProcessorRole:
     Type: "AWS::IAM::Role"
