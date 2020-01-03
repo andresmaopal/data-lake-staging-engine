@@ -112,17 +112,22 @@ Cloudwatch cannot create and trigger lambdas from changes to existing S3 buckets
 
 Execution steps:
 * Go into the AWS Console, Lambda screen.
-* Find the lambda named: `<ENVIRONMENT_PREFIX>datalake-staging-StartFileProcessing-<RANDOM CHARS ADDED BY SAM>`
+* Find the lambda named: `<ENVIRONMENT_PREFIX>-StartFileProcessing-<RANDOM CHARS ADDED BY SAM>`
 * Manually add an S3 trigger, generated from both PUT and MULTIPART UPLOAD events on the RAW bucket you created (in this example, this would be `octank-dev-raw`)
 
 **NOTE:** Do not use "Object Created (All)" as a trigger - Staging-Catalog-Engine copies new files when it adds their metadata, so a trigger on All will cause the staging process to begin again after the copy.
 
 ### 3.2 Add a Lambda Layer to the CopyFileFromRawToStaging Lambda
 
-As this solutions moves each triggered file to a partitioned folder (on Raw) and makes a parquet copy (on Staging. An external Python library is required, so for this solution we are going to use (AWS Data Wrangler: https://github.com/awslabs/aws-data-wrangler/ ) that is a data utility belt with several ETL functions.
+As this solutions moves each triggered file to a partitioned folder (on Raw) and makes a parquet copy (on Staging. An external Python library is required, so for this solution we are going to use [AWS Data Wrangler](https://github.com/awslabs/aws-data-wrangler/ ) that is a data utility belt with several ETL functions.
 
-In order to do that we need to create a (Lambda Layer: https://docs.aws.amazon.com/lambda/latest/dg/configuration-layers.html) to attach it into the CopyFileFromRawToStaging Lambda. Go to this (link: https://github.com/awslabs/aws-data-wrangler/releases/download/0.0.23/awswrangler-layer-0.0.23-py3.6.zip) download the .zip file and uploaded to a temporal S3 bucket.
+In order to do that we need to create a [Lambda Layer](https://docs.aws.amazon.com/lambda/latest/dg/configuration-layers.html) to attach it into the CopyFileFromRawToStaging Lambda. 
 
+Execution steps:
+* Click in this [link](https://github.com/awslabs/aws-data-wrangler/releases/download/0.0.23/awswrangler-layer-0.0.23-py3.6.zip)  save the .zip file and upload to a temporal S3 bucket in your account, or use this public link (https://public-slides-bucket.s3.amazonaws.com/lib/awswrangler-layer-0.0.23-py3.6.zip)
+* Go into the AWS Console, Lambda screen and click on "Layers"
+* Create a new Layer with the name `aws_data_wrangler_0_0_23` and select "Upload a file from Amazon S3", fill the field with the path were the .zip file is uploaded.
+* Find the Lambda named: `<ENVIRONMENT_PREFIX>-CopyFileFromRawToStaging-<RANDOM CHARS ADDED BY SAM>` and in the "Layers" box add the previoulsy created Lambda Layer. 
 
 
 
