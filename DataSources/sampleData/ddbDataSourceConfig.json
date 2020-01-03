@@ -9,12 +9,12 @@
       "stagingFolderPath": "customer_reviews",
       "stagingPartitionSettings": {
         "expression": "dt=%Y-%m-%d",
-        "timezone": "America/Bogota"
+        "timezone": "America/Los_Angeles"
       }
     },
-    "fileType": "co_generic",
+    "fileType": "us_generic",
     "metadata": {
-      "country": "co",
+      "country": "us",
       "quality": "High",
       "sourcesystem": "RDS Postgres"
     },
