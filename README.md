@@ -124,7 +124,7 @@ As this solutions moves each triggered file to a partitioned folder (on Raw) and
 In order to do that we need to create a [Lambda Layer](https://docs.aws.amazon.com/lambda/latest/dg/configuration-layers.html) to attach it into the CopyFileFromRawToStaging Lambda. 
 
 Execution steps:
-* Click this [link](https://github.com/awslabs/aws-data-wrangler/releases/download/0.0.23/awswrangler-layer-0.0.23-py3.6.zip)  and save the .zip file and upload to a temporal S3 bucket in your account. Or copy this public link: (https://public-slides-bucket.s3.amazonaws.com/lib/awswrangler-layer-0.0.23-py3.6.zip)
+* Click this [link](https://github.com/awslabs/aws-data-wrangler/releases/download/0.0.23/awswrangler-layer-0.0.23-py3.6.zip)  and save the .zip file and upload it to a temporal S3 bucket in your account or just copy this public link: (https://public-slides-bucket.s3.amazonaws.com/lib/awswrangler-layer-0.0.23-py3.6.zip)
 * Go into the AWS Console, Lambda screen and click on "Layers"
 * Create a new Layer with the name `aws_data_wrangler_0_0_23` and select "Upload a file from Amazon S3", fill the field with the path were the .zip file is located.
 * Find the Lambda named: `<ENVIRONMENT_PREFIX>-CopyFileFromRawToStaging-<RANDOM CHARS ADDED BY SAM>` and in the "Layers" box add the previoulsy created Lambda Layer. 
