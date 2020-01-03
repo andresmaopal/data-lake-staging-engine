@@ -104,7 +104,7 @@ For this example, the commands should be:
 ````
 sam package --template-file ./stagingEngine.yaml --output-template-file stagingEngineDeploy.yaml --s3-bucket octank-dev-stagingenginecodepackages
 
-sam deploy --template-file stagingEngineDeploy.yaml --stack-name octank-dev-datalake-staging-engine --capabilities CAPABILITY_IAM --parameter-overrides EnvironmentPrefix=wildrydes-dev-
+sam deploy --template-file stagingEngineDeploy.yaml --stack-name octank-dev-datalake-staging-engine --capabilities CAPABILITY_IAM --parameter-overrides EnvironmentPrefix=octank-dev-
 ````
 
 ### 3.1 Add the Staging trigger
