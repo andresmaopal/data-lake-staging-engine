@@ -99,6 +99,21 @@ Resources:
               Fn::GetAtt:
               - LambdaExecutionRole
               - Arn
+      - PolicyName: GlueCrawlers_role
+        PolicyDocument:
+          Version: '2012-10-17'
+          Statement:
+            Effect: Allow
+            Action:
+            - glue:ListCrawlers
+            - glue:GetCrawlers
+            - glue:CreateCrawler
+            - glue:StartCrawler
+            - glue:CreateDatabase
+            - glue:StopCrawler
+            - glue:CreatePartition
+            - glue:GetDatabases
+            Resource: '*'
   LambdaFailedFileProcessorRole:
     Type: AWS::IAM::Role
     Properties:
@@ -170,7 +185,7 @@ Resources:
     Properties:
       Handler: startFileProcessing.lambda_handler
       Runtime: python3.6
-      CodeUri: s3://cdc-datalakeraw/9f12b124deeccf0e42c5ac0f0865e4bd
+      CodeUri: s3://cdc-datalakeraw/4afbb3bc4ad1e7920c898b4a60aacb2d
       Description: Initiates File Processing Step Function. This is triggered when
         new file put into RAW bucket.
       MemorySize: 128
@@ -218,7 +233,7 @@ Resources:
     Properties:
       Handler: getFileSettings.lambda_handler
       Runtime: python3.6
-      CodeUri: s3://cdc-datalakeraw/47ac83af34754078a7e1e5c00ffd88fa
+      CodeUri: s3://cdc-datalakeraw/c68f93aa66c706782a6ad400464ccd3c
       Description: Load the settings for the new file's file type (data source)
       MemorySize: 128
       Timeout: 300
@@ -231,7 +246,7 @@ Resources:
     Properties:
       Handler: calculateMetaDataForFile.lambda_handler
       Runtime: python3.6
-      CodeUri: s3://cdc-datalakeraw/ee9a40ad12664726373b70088b0ab214
+      CodeUri: s3://cdc-datalakeraw/1d6488b8e039dcae1ec627a84c221e8e
       Description: Attach the required tags and metadata to the new file.
       MemorySize: 128
       Timeout: 600
@@ -244,7 +259,7 @@ Resources:
     Properties:
       Handler: copyFileFromRawToStaging.lambda_handler
       Runtime: python3.6
-      CodeUri: s3://cdc-datalakeraw/e3a1c3cc0577dd6366297d194fc65071
+      CodeUri: s3://cdc-datalakeraw/d3fd40978ae0e8cd9721d59c8c6ebab3
       Description: Copy the new file partitioned, and its tags and metadata to the
         staging bucket in parquet.
       MemorySize: 1408
@@ -282,7 +297,7 @@ Resources:
     Properties:
       Handler: deleteRawFile.lambda_handler
       Runtime: python3.6
-      CodeUri: s3://cdc-datalakeraw/b544962bff3d3fd46ef5c422fe4ed9eb
+      CodeUri: s3://cdc-datalakeraw/f82cbf6bbfe0e39932dfc55e1c26ef90
       Description: Deletes the raw file after successful or failed staging.
       MemorySize: 128
       Timeout: 600
@@ -299,7 +314,7 @@ Resources:
         Fn::GetAtt:
         - GlueOpsServiceRole
         - Arn
-      CodeUri: s3://cdc-datalakeraw/e08763ab131f876657357871f8952862
+      CodeUri: s3://cdc-datalakeraw/6b50d0c518dc638ae366aec9b0871c8f
       Description: Records successful staging in the data lake data catalog, and sends
         success SNS if configured.
       MemorySize: 128
@@ -323,7 +338,7 @@ Resources:
     Properties:
       Handler: copyFileFromRawToFailed.lambda_handler
       Runtime: python3.6
-      CodeUri: s3://cdc-datalakeraw/b21dccd3573aafb2623b6c4711d727a3
+      CodeUri: s3://cdc-datalakeraw/e5bef36825bcaf24577a859e3f89b36d
       Description: Copy files that have failed ingress from the raw to failed bucket.
       MemorySize: 128
       Timeout: 600
@@ -336,7 +351,7 @@ Resources:
     Properties:
       Handler: recordFailedStaging.lambda_handler
       Runtime: python3.6
-      CodeUri: s3://cdc-datalakeraw/2127b0201766bb17723110a336bfc400
+      CodeUri: s3://cdc-datalakeraw/39507093747591eb83fe8d461ca39941
       Description: Records failed staging in the data lake data catalog, and sends
         failure SNS if configured.
       MemorySize: 128

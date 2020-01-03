@@ -6,7 +6,6 @@
     "fileSettings": {
       "fileFormat": "csv",
       "calculateMD5": "False",
-      "stagingFolderPath": "customer_reviews",
       "stagingPartitionSettings": {
         "expression": "dt=%Y-%m-%d",
         "timezone": "America/Los_Angeles"
