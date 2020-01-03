@@ -111,7 +111,6 @@ Resources:
             - glue:CreateCrawler
             - glue:StartCrawler
             - glue:CreateDatabase
-            - glue:StartJobRun
             - glue:StopCrawler
             - glue:CreatePartition
             - glue:GetDatabases
