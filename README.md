@@ -117,7 +117,7 @@ Execution steps:
 
 **NOTE:** Do not use "Object Created (All)" as a trigger - Staging-Catalog-Engine copies new files when it adds their metadata, so a trigger on All will cause the staging process to begin again after the copy.
 
-### 3.2 Add a Lambda Layer to the CopyFileFromRawToStaging Lambda
+### 3.2 Add a Lambda Layer to a Lambda who requires it
 
 As this solutions moves each triggered file to a partitioned folder (on Raw) and makes a parquet copy (on Staging. An external Python library is required, so for this solution we are going to use [AWS Data Wrangler](https://github.com/awslabs/aws-data-wrangler/ ) that is a data utility belt with several ETL functions.
 
