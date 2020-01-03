@@ -47,7 +47,7 @@ Execution steps:
 * Add a KMS Key ARN if you want your S3 Buckets encrypted (recommended - also, there are further improvements with other encryption options imminent in this area)
 * All other options are self explanatory, and the defaults are acceptable when testing the solution.
 
-## 2. Provisioning the Visualisations (optional)
+## 2. Provisioning the Visualisations (Optional)
 This step is optional, but highly recommended. If the customer does not want elasticsearch, a temporary cluster will allow debugging while the datalake is set up, and will illustrate its value. 
 
 If you want elasticsearch visualisation, both of the following steps are required (in order).
@@ -112,10 +112,24 @@ Cloudwatch cannot create and trigger lambdas from changes to existing S3 buckets
 
 Execution steps:
 * Go into the AWS Console, Lambda screen.
-* Find the lambda named: `<ENVIRONMENT_PREFIX>datalake-staging-StartFileProcessing-<RANDOM CHARS ADDED BY SAM>`
-* Manually add an S3 trigger, generated from both PUT and MULTIPART UPLOAD events on the RAW bucket you created (in this example, this would be `octank-dev-raw`)
+* Find the lambda named: `<ENVIRONMENT_PREFIX>-StartFileProcessing-<RANDOM CHARS ADDED BY SAM>`
+* Manually add two S3 triggers: 1) on PUT events, 2) on MULTIPART UPLOAD events selecting the RAW bucket (in this example, this would be `octank-dev-raw`) with the prefix: `landing/` on both triggers, in order to restrict them to this folder.
 
 **NOTE:** Do not use "Object Created (All)" as a trigger - Staging-Catalog-Engine copies new files when it adds their metadata, so a trigger on All will cause the staging process to begin again after the copy.
+
+### 3.2 Add a Lambda Layer to a Lambda who requires it
+
+As this solutions moves each triggered file to a partitioned folder (on Raw) and makes a parquet copy (on Staging). An external Python library is required, so for this solution we are going to use [AWS Data Wrangler](https://github.com/awslabs/aws-data-wrangler/ ) which is a data utility belt with several ETL functions.
+
+In order to do that we need to create a [Lambda Layer](https://docs.aws.amazon.com/lambda/latest/dg/configuration-layers.html) to attach it into the CopyFileFromRawToStaging Lambda. 
+
+Execution steps:
+* Click this [link](https://github.com/awslabs/aws-data-wrangler/releases/download/0.0.23/awswrangler-layer-0.0.23-py3.6.zip)  and save the .zip file and upload it to a temporal S3 bucket in your account or just copy this public link: (https://public-slides-bucket.s3.amazonaws.com/lib/awswrangler-layer-0.0.23-py3.6.zip)
+* Go into the AWS Console, Lambda screen and click on "Layers"
+* Create a new Layer with the name `aws_data_wrangler_0_0_23` and select "Upload a file from Amazon S3", fill the field with the path were the .zip file is located.
+* Find the Lambda named: `<ENVIRONMENT_PREFIX>-CopyFileFromRawToStaging-<RANDOM CHARS ADDED BY SAM>` and in the "Layers" box add the previoulsy created Lambda Layer and Save the modified Lambda function.
+
+
 
 Congratulations! The Staging engine is now fully provisioned! Now let's configure a datasource and add some data.
 
