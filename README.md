@@ -119,7 +119,7 @@ Execution steps:
 
 ### 3.2 Add a Lambda Layer to a Lambda who requires it
 
-As this solutions moves each triggered file to a partitioned folder (on Raw) and makes a parquet copy (on Staging. An external Python library is required, so for this solution we are going to use [AWS Data Wrangler](https://github.com/awslabs/aws-data-wrangler/ ) which is a data utility belt with several ETL functions.
+As this solutions moves each triggered file to a partitioned folder (on Raw) and makes a parquet copy (on Staging). An external Python library is required, so for this solution we are going to use [AWS Data Wrangler](https://github.com/awslabs/aws-data-wrangler/ ) which is a data utility belt with several ETL functions.
 
 In order to do that we need to create a [Lambda Layer](https://docs.aws.amazon.com/lambda/latest/dg/configuration-layers.html) to attach it into the CopyFileFromRawToStaging Lambda. 
 
