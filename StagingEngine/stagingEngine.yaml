@@ -100,6 +100,22 @@ Resources:
             Action:
             - iam:PassRole
             Resource: !GetAtt [ LambdaExecutionRole, Arn ]
+      - PolicyName: GlueCrawlers_role
+        PolicyDocument:
+          Version: '2012-10-17'
+          Statement:
+            Effect: Allow
+            Action:
+            - glue:ListCrawlers
+            - glue:GetCrawlers
+            - glue:CreateCrawler
+            - glue:StartCrawler
+            - glue:CreateDatabase
+            - glue:StartJobRun
+            - glue:StopCrawler
+            - glue:CreatePartition
+            - glue:GetDatabases
+            Resource: "*"
 
   LambdaFailedFileProcessorRole:
     Type: "AWS::IAM::Role"
