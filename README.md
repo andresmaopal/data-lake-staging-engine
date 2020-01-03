@@ -134,10 +134,10 @@ You now have a fully configured DataSource. The individual config attributes wil
 ### 4.2 Ingress a sample file for the new data source
 Execution steps:
 * Go into the AWS Console, S3 screen, open the raw bucket (`octank-dev-raw` in this example)
-* Create the main Landing folfer "landing".
-* Within that folder create a new one: "orders".  
+* Create a new folder "landing" to be the folder to write data.
+* Within the folder `landing` create new subfolders until have this path: "us/database_name/schema_name/orders".  
 * Using the Web console, upload the file `DataSources/sampleData/LOAD0000001.csv` into this folder.
-* Confirm the file has appeared in the Raw (partitioned folder) and  Staging folder, with a path similar in RAW like: `octank-dev-raw/partitioned/co/database_name/schema_name/table_name/dt=2018-10-26/LOAD0000001.csv` and in STAGING: `octank-dev-staging/co/database_name/schema_name/table_name/dt=2018-10-26/89585bcb3984476fad1d028ba524d9dd.parquet`
+* Confirm the file has appeared in the Raw (partitioned folder) and  Staging folder, with a path similar in RAW like: `octank-dev-raw/partitioned/us/database_name/schema_name/orders/dt=2018-10-26/LOAD0000001.csv` and in STAGING: `octank-dev-staging/co/database_name/schema_name/table_name/dt=2018-10-26/89585bcb3984476fad1d028ba524d9dd.parquet`
 
 If the file is not in the staging folder, one of the earlier steps has been executed incorrectly.
 If the file is not in the failed folder, one of the earlier steps has been executed incorrectly.
