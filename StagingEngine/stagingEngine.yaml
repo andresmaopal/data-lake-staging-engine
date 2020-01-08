@@ -96,6 +96,9 @@ Resources:
                 Action:
                   - iam:PassRole
                 Resource: "*"
+              - Effect: "Allow"
+                Action: "sts:AssumeRole"
+                Resource: "*"
 
   # Role to be passed by the RecordSuccessfulStaging Lambda in order to sync the crawler
   GlueOpsServiceRole:
