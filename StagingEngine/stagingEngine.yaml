@@ -20,6 +20,7 @@ Resources:
             Principal:
               Service:
                 - lambda.amazonaws.com
+                - glue.amazonaws.com
             Action: "sts:AssumeRole"
       Path: "/"
       Policies:
@@ -256,7 +257,7 @@ Resources:
       Runtime: python3.6
       CodeUri: ./src/copyFileFromRawToStaging.py
       Description: Copy the new file partitioned, and its tags and metadata to the staging bucket in parquet.
-      MemorySize: 1408
+      MemorySize: 1216
       Timeout: 900
       Role: !GetAtt [ LambdaExecutionRole, Arn]
       Policies:
@@ -300,12 +301,21 @@ Resources:
     Properties:
       Handler: recordSuccessfulStaging.lambda_handler
       Runtime: python3.6
-      Role: !GetAtt GlueOpsServiceRole.Arn
       CodeUri: ./src/recordSuccessfulStaging.py
       Description: Records successful staging in the data lake data catalog, and sends success SNS if configured.
       MemorySize: 128
       Timeout: 300
+      Role: !GetAtt [ LambdaExecutionRole, Arn]
       Policies:
+        - arn:aws:iam::aws:policy/service-role/AWSGlueServiceRole
+        - DynamoDBCrudPolicy:
+            TableName:
+              Fn::ImportValue:
+                !Sub "${EnvironmentPrefix}DataLake-S3FileProcessingCacheTableName"
+        - DynamoDBCrudPolicy:
+            TableName:
+              Fn::ImportValue:
+                !Sub "${EnvironmentPrefix}DataLake-DataCatalogTableName"
         - LogRecordPolicy:
           Statement:
           - Sid: writelogs
@@ -313,12 +323,22 @@ Resources:
             Action:
             - logs:*
             Resource: arn:aws:logs:*:*:*
-        - DynamoDBCrudPolicy:
-            TableName: 
-              Fn::ImportValue:
-                !Sub "${EnvironmentPrefix}DataLake-DataCatalogTableName"
         - SNSPublishMessagePolicy:
             TopicName: '*'
+        - GlueCrawlerRolePolicy:
+          Statement:
+          - Sid: gluePermissions
+            Effect: Allow
+            Action:
+            - glue:ListCrawlers
+            - glue:GetCrawlers
+            - glue:CreateCrawler
+            - glue:StartCrawler
+            - glue:CreateDatabase
+            - glue:StopCrawler
+            - glue:CreatePartition
+            - glue:GetDatabases
+            Resource: "*"         
 
   CopyFileFromRawToFailed:
     Type: 'AWS::Serverless::Function'
