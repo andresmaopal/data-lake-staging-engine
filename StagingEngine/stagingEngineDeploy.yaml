@@ -94,6 +94,10 @@ Resources:
             Action:
             - iam:PassRole
             Resource: '*'
+          - Effect: Allow
+            Action:
+            - sts:AssumeRole
+            Resource: '*'
   GlueOpsServiceRole:
     Type: AWS::IAM::Role
     Properties:
@@ -118,11 +122,8 @@ Resources:
           Statement:
             Effect: Allow
             Action:
-            - iam:PassRole
-            Resource:
-              Fn::GetAtt:
-              - LambdaExecutionRole
-              - Arn
+            - sts:AssumeRole
+            Resource: '*'
       - PolicyName: GlueCrawlers_role
         PolicyDocument:
           Version: '2012-10-17'
@@ -209,7 +210,7 @@ Resources:
     Properties:
       Handler: startFileProcessing.lambda_handler
       Runtime: python3.6
-      CodeUri: s3://rappi-datalake-stagingenginecodepackages/ea5e36daf0188906cb35dc4fd3c8c0f2
+      CodeUri: s3://rappi-datalake-stagingenginecodepackages/0f900b6ad482201f91622e3319c367b6
       Description: Initiates File Processing Step Function. This is triggered when
         new file put into RAW bucket.
       MemorySize: 128
@@ -257,7 +258,7 @@ Resources:
     Properties:
       Handler: getFileSettings.lambda_handler
       Runtime: python3.6
-      CodeUri: s3://rappi-datalake-stagingenginecodepackages/537db00ea2d0dcd940146ae7ce62a1a6
+      CodeUri: s3://rappi-datalake-stagingenginecodepackages/0a7cefc1b31a043b2c17e603a825765e
       Description: Load the settings for the new file's file type (data source)
       MemorySize: 128
       Timeout: 300
@@ -270,7 +271,7 @@ Resources:
     Properties:
       Handler: calculateMetaDataForFile.lambda_handler
       Runtime: python3.6
-      CodeUri: s3://rappi-datalake-stagingenginecodepackages/a63d7828828d2d6a7893206c6e04ed52
+      CodeUri: s3://rappi-datalake-stagingenginecodepackages/da7f7ee42f5139f83a92f58832712451
       Description: Attach the required tags and metadata to the new file.
       MemorySize: 128
       Timeout: 600
@@ -283,7 +284,7 @@ Resources:
     Properties:
       Handler: copyFileFromRawToStaging.lambda_handler
       Runtime: python3.6
-      CodeUri: s3://rappi-datalake-stagingenginecodepackages/da9d313ce58828903b7ee8169c0b4392
+      CodeUri: s3://rappi-datalake-stagingenginecodepackages/01064a0f955f09ed07500df782278f15
       Description: Copy the new file partitioned, and its tags and metadata to the
         staging bucket in parquet.
       MemorySize: 1216
@@ -321,7 +322,7 @@ Resources:
     Properties:
       Handler: deleteRawFile.lambda_handler
       Runtime: python3.6
-      CodeUri: s3://rappi-datalake-stagingenginecodepackages/f6960edc8900808c41c91886ccc00068
+      CodeUri: s3://rappi-datalake-stagingenginecodepackages/21dac0343973ecd1d9286de81b99c096
       Description: Deletes the raw file after successful or failed staging.
       MemorySize: 128
       Timeout: 600
@@ -334,7 +335,7 @@ Resources:
     Properties:
       Handler: recordSuccessfulStaging.lambda_handler
       Runtime: python3.6
-      CodeUri: s3://rappi-datalake-stagingenginecodepackages/9c0a783c1b2644da0a2b985dddf2d4d9
+      CodeUri: s3://rappi-datalake-stagingenginecodepackages/5bba3abedd2bab886e343fb54214f7e9
       Description: Records successful staging in the data lake data catalog, and sends
         success SNS if configured.
       MemorySize: 128
@@ -367,7 +368,7 @@ Resources:
     Properties:
       Handler: copyFileFromRawToFailed.lambda_handler
       Runtime: python3.6
-      CodeUri: s3://rappi-datalake-stagingenginecodepackages/6ad35d9bf3107eaf719a50d1efb3a85f
+      CodeUri: s3://rappi-datalake-stagingenginecodepackages/6e7ea1114ebaa7dfd660500ee4ff80d7
       Description: Copy files that have failed ingress from the raw to failed bucket.
       MemorySize: 128
       Timeout: 600
@@ -380,7 +381,7 @@ Resources:
     Properties:
       Handler: recordFailedStaging.lambda_handler
       Runtime: python3.6
-      CodeUri: s3://rappi-datalake-stagingenginecodepackages/8756025da32f3b2a6124a165e7f1d460
+      CodeUri: s3://rappi-datalake-stagingenginecodepackages/f0e9fb02248d8cb31ba756fc52beff37
       Description: Records failed staging in the data lake data catalog, and sends
         failure SNS if configured.
       MemorySize: 128

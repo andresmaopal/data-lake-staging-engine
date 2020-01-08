@@ -96,8 +96,9 @@ Resources:
                 Action:
                   - iam:PassRole
                 Resource: "*"
-              - Effect: "Allow"
-                Action: "sts:AssumeRole"
+              - Effect: Allow
+                Action:
+                  - sts:AssumeRole
                 Resource: "*"
 
   # Role to be passed by the RecordSuccessfulStaging Lambda in order to sync the crawler
@@ -126,7 +127,8 @@ Resources:
             Effect: Allow
             Action:
             - iam:PassRole
-            Resource: !GetAtt [ LambdaExecutionRole, Arn ]
+            - sts:AssumeRole
+            Resource: "*"
       - PolicyName: GlueCrawlers_role
         PolicyDocument:
           Version: '2012-10-17'
