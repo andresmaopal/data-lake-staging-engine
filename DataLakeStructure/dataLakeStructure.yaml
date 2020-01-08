@@ -172,14 +172,14 @@ Resources:
   #               "s3:x-amz-acl": "bucket-owner-full-control"  
   #   DependsOn: S3Raw
 
-  S3Staging:
+  S3Curated:
     Type: 'AWS::S3::Bucket'
     Properties:
       BucketName:
         !Join
           - ''
           - - !Ref EnvironmentPrefix
-            - !Ref S3StagingName
+            - !Ref S3CuratedName
       PublicAccessBlockConfiguration:
         BlockPublicAcls: true
         IgnorePublicAcls: true
@@ -199,7 +199,7 @@ Resources:
         LogFilePrefix:
           !Join
             - ''
-            - - !Ref S3StagingName
+            - - !Ref S3CuratedName
               - '/'
     DependsOn: S3Logs
 
@@ -427,10 +427,10 @@ Parameters:
     MaxLength: 63
     AllowedPattern: "([a-zA-Z0-9]){1}([a-zA-Z0-9-])*"
 
-  S3StagingName:
+  S3CuratedName:
     Type: String
-    Default: staging
-    Description: Enter a name for the Staging bucket.
+    Default: curated
+    Description: Enter a name for the curated bucket.
     MinLength: 3
     MaxLength: 63
     AllowedPattern: "([a-zA-Z0-9]){1}([a-zA-Z0-9-])*"
@@ -546,7 +546,7 @@ Metadata:
         Parameters:
           - S3StagingName
           - S3RawName
-          - S3StagingName
+          - S3CuratedName
           # - S3GoldName
           # - S3DDEName
           # - S3ValidationName
@@ -626,17 +626,17 @@ Outputs:
     Export: 
       Name: !Sub "${EnvironmentPrefix}DataLake-S3Raw-Arn"
 
-  S3StagingName:
-    Description: The name of the Staging S3 bucket created
-    Value: !Sub "${EnvironmentPrefix}${S3StagingName}"
+  S3CuratedName:
+    Description: The name of the Curated S3 bucket created
+    Value: !Sub "${EnvironmentPrefix}${S3CuratedName}"
     Export: 
-      Name: !Sub "${EnvironmentPrefix}DataLake-S3Staging-Name"
+      Name: !Sub "${EnvironmentPrefix}DataLake-S3Curated-Name"
 
-  S3StagingARN:
-    Description: The arn of the Staging S3 bucket created
-    Value: !GetAtt S3Staging.Arn
+  S3CuratedARN:
+    Description: The arn of the Curated S3 bucket created
+    Value: !GetAtt S3Curated.Arn
     Export: 
-      Name: !Sub "${EnvironmentPrefix}DataLake-S3Staging-Arn"
+      Name: !Sub "${EnvironmentPrefix}DataLake-S3Curated-Arn"
 
   # S3GoldARN:
   #   Description: The arn of the Gold S3 bucket created

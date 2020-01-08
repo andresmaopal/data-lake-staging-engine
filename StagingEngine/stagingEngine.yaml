@@ -115,22 +115,6 @@ Resources:
             - glue:CreatePartition
             - glue:GetDatabases
             Resource: "*"
-        - PolicyName: LogRecordPolicy
-          PolicyDocument:
-            Version: '2012-10-17'
-            Statement:
-              Effect: Allow
-              Action:
-              - logs:*
-              Resource: arn:aws:logs:*:*:*
-        - PolicyName: DynamoDBCrudPolicy
-          PolicyDocument:
-            Version: '2012-10-17'
-            TableName: 
-              Fn::ImportValue:
-                !Sub "${EnvironmentPrefix}DataLake-DataCatalogTableName"
-        - PolicyName: SNSPublishMessagePolicy
-            TopicName: '*'
 
   LambdaFailedFileProcessorRole:
     Type: "AWS::IAM::Role"
@@ -321,7 +305,20 @@ Resources:
       Description: Records successful staging in the data lake data catalog, and sends success SNS if configured.
       MemorySize: 128
       Timeout: 300
-
+      Policies:
+        - LogRecordPolicy:
+          Statement:
+          - Sid: writelogs
+            Effect: Allow
+            Action:
+            - logs:*
+            Resource: arn:aws:logs:*:*:*
+        - DynamoDBCrudPolicy:
+            TableName: 
+              Fn::ImportValue:
+                !Sub "${EnvironmentPrefix}DataLake-DataCatalogTableName"
+        - SNSPublishMessagePolicy:
+            TopicName: '*'
 
   CopyFileFromRawToFailed:
     Type: 'AWS::Serverless::Function'
