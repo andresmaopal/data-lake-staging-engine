@@ -73,6 +73,29 @@ Resources:
                   - dynamodb:UpdateTable
                   - dynamodb:GetRecords
                 Resource: "*"
+        - PolicyName: GlueCrawlerPolicy
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action:
+                  - glue:ListCrawlers
+                  - glue:GetCrawlers
+                  - glue:CreateCrawler
+                  - glue:StartCrawler
+                  - glue:CreateDatabase
+                  - glue:StopCrawler
+                  - glue:CreatePartition
+                  - glue:GetDatabases
+                Resource: "*"
+        - PolicyName: IAM_PassRole
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action:
+                  - iam:PassRole
+                Resource: "*"
 
   # Role to be passed by the RecordSuccessfulStaging Lambda in order to sync the crawler
   GlueOpsServiceRole:
@@ -305,7 +328,6 @@ Resources:
       Description: Records successful staging in the data lake data catalog, and sends success SNS if configured.
       MemorySize: 128
       Timeout: 300
-      Role: !GetAtt [ LambdaExecutionRole, Arn]
       Policies:
         - arn:aws:iam::aws:policy/service-role/AWSGlueServiceRole
         - DynamoDBCrudPolicy:
@@ -325,20 +347,9 @@ Resources:
             Resource: arn:aws:logs:*:*:*
         - SNSPublishMessagePolicy:
             TopicName: '*'
-        - GlueCrawlerRolePolicy:
-          Statement:
-          - Sid: gluePermissions
-            Effect: Allow
-            Action:
-            - glue:ListCrawlers
-            - glue:GetCrawlers
-            - glue:CreateCrawler
-            - glue:StartCrawler
-            - glue:CreateDatabase
-            - glue:StopCrawler
-            - glue:CreatePartition
-            - glue:GetDatabases
-            Resource: "*"         
+      Role: !GetAtt [ LambdaExecutionRole, Arn ] 
+
+      
 
   CopyFileFromRawToFailed:
     Type: 'AWS::Serverless::Function'
