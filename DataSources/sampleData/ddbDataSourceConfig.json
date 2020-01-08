@@ -1,6 +1,6 @@
 {
     "crawlerSettings": {
-      "glueRoleName": "GlueOpsServiceRole",
+      "glueRoleName": "prefix-GlueOpsServiceRole-xxxx",
       "stagingDatabasePrefix": "customer_staging"
       },
     "fileSettings": {
