@@ -21,7 +21,7 @@ Resources:
               Service:
                 - lambda.amazonaws.com
                 - glue.amazonaws.com
-            Action: "sts:AssumeRole"
+            Action: "sts:*"
       Path: "/"
       Policies:
         - PolicyName: S3GetPutTag
