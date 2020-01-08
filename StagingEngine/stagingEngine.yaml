@@ -118,7 +118,7 @@ Resources:
                 - glue.amazonaws.com
               AWS: !GetAtt [ LambdaExecutionRole, Arn ]
             Action: "sts:AssumeRole"
-      Path: "/"
+      Path: "/service-role/"
       Policies:
       - PolicyName: IAM_PassRole
         PolicyDocument:
