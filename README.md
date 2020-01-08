@@ -53,7 +53,7 @@ This step is optional, but highly recommended. If the customer does not want ela
 If you want elasticsearch visualisation, both of the following steps are required (in order).
 
 ### 2.1 Provision Elasticsearch
-This step creates the elasticsearch cluster the datalake will use. For dev databases, a single T2 instance is acceptable. For production instances, standard elasticsearch best practise apply.
+This step creates the Elasticsearch cluster the datalake will use. For dev databases, a single T2 instance is acceptable. For production instances, standard elasticsearch best practise apply.
 
 NOTE: Elasticsearch is a very easy service to over-provision. To assist in determining the correct resources, the cloudformation template includes a CloudWatch dashboard to display all relevant cluster metrics.
 
@@ -66,7 +66,7 @@ Execution steps:
 * Change the other parameters as per requirements / best practise. The default values will provision a single instance `t2.medium` node - this is adequate for low tps dev and testing.
 
 ### 2.2 Provision the Visualisation Lambdas
-This step creates a lambda which is triggered by changes to the data catalog DynamoDB table. The lambda takes the changes and sends them to the elasticsearch cluster created above. 
+This step creates a lambda which is triggered by changes to the data catalog DynamoDB table. The lambda takes the changes and sends them to the Elasticsearch cluster created above. 
 
 Execution steps:
 * Create a data lake IAM user, with CLI access.
@@ -128,6 +128,7 @@ Execution steps:
 * Go into the AWS Console, Lambda screen and click on "Layers"
 * Create a new Layer with the name `aws_data_wrangler_0_0_23` and select "Upload a file from Amazon S3"
 * Click this [link](https://github.com/awslabs/aws-data-wrangler/releases/download/0.0.23/awswrangler-layer-0.0.23-py3.6.zip) and save the .zip file and upload it to a temporal S3 bucket in your account or just copy this public path: https://public-slides-bucket.s3.amazonaws.com/lib/awswrangler-layer-0.0.23-py3.6.zip
+* Choose "Python 3.6" as runtime
 
 * Find the Lambda named: `<ENVIRONMENT_PREFIX>-CopyFileFromRawToStaging-<RANDOM CHARS ADDED BY SAM>` and in the "Layers" box add the previoulsy created Lambda Layer and Save the modified Lambda function.
 
