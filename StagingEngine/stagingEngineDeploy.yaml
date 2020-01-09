@@ -146,7 +146,11 @@ Resources:
             - s3:GetObject
             - s3:GetObjectVersion
             Resource:
-              Fn::Sub: ${EnvironmentPrefix}DataLake-S3Staging-Arn
+              Fn::Join:
+              - ''
+              - - Fn::ImportValue:
+                    Fn::Sub: ${EnvironmentPrefix}DataLake-S3Staging-Arn
+                - /*
   LambdaFailedFileProcessorRole:
     Type: AWS::IAM::Role
     Properties:
@@ -218,7 +222,7 @@ Resources:
     Properties:
       Handler: startFileProcessing.lambda_handler
       Runtime: python3.6
-      CodeUri: s3://rappi-datalake-stagingenginecodepackages/52009af669ce353800ad6154a4be2e09
+      CodeUri: s3://rappi-datalake-stagingenginecodepackages/eedad93b1187e71a34883cfd40a7f190
       Description: Initiates File Processing Step Function. This is triggered when
         new file put into RAW bucket.
       MemorySize: 128
@@ -266,7 +270,7 @@ Resources:
     Properties:
       Handler: getFileSettings.lambda_handler
       Runtime: python3.6
-      CodeUri: s3://rappi-datalake-stagingenginecodepackages/00a9b8df7962ee1f627c465e43890516
+      CodeUri: s3://rappi-datalake-stagingenginecodepackages/8f32d0f82d1099c2b51a49277b860434
       Description: Load the settings for the new file's file type (data source)
       MemorySize: 128
       Timeout: 300
@@ -279,7 +283,7 @@ Resources:
     Properties:
       Handler: calculateMetaDataForFile.lambda_handler
       Runtime: python3.6
-      CodeUri: s3://rappi-datalake-stagingenginecodepackages/e23c1f0118bb61196215bb9c94564f2a
+      CodeUri: s3://rappi-datalake-stagingenginecodepackages/c69d98c42e20ae18e4cc938aa3fc5513
       Description: Attach the required tags and metadata to the new file.
       MemorySize: 128
       Timeout: 600
@@ -292,7 +296,7 @@ Resources:
     Properties:
       Handler: copyFileFromRawToStaging.lambda_handler
       Runtime: python3.6
-      CodeUri: s3://rappi-datalake-stagingenginecodepackages/1554ee11af183c9ee46fa7da530e8c9c
+      CodeUri: s3://rappi-datalake-stagingenginecodepackages/babf90148cd02586a7f1707258eef7f5
       Description: Copy the new file partitioned, and its tags and metadata to the
         staging bucket in parquet.
       MemorySize: 1216
@@ -330,7 +334,7 @@ Resources:
     Properties:
       Handler: deleteRawFile.lambda_handler
       Runtime: python3.6
-      CodeUri: s3://rappi-datalake-stagingenginecodepackages/653fee766011ed876b5621dbe7c7c36d
+      CodeUri: s3://rappi-datalake-stagingenginecodepackages/d41fe01e249172b9c9306b7ecdea40c5
       Description: Deletes the raw file after successful or failed staging.
       MemorySize: 128
       Timeout: 600
@@ -343,7 +347,7 @@ Resources:
     Properties:
       Handler: recordSuccessfulStaging.lambda_handler
       Runtime: python3.6
-      CodeUri: s3://rappi-datalake-stagingenginecodepackages/ee2cdd5aa75fd230113ab533cb1bc479
+      CodeUri: s3://rappi-datalake-stagingenginecodepackages/ccab0b5336d14696859f5832fbd430b8
       Description: Records successful staging in the data lake data catalog, and sends
         success SNS if configured.
       MemorySize: 128
@@ -376,7 +380,7 @@ Resources:
     Properties:
       Handler: copyFileFromRawToFailed.lambda_handler
       Runtime: python3.6
-      CodeUri: s3://rappi-datalake-stagingenginecodepackages/dcfe0d5295e923d6cc68908500e1c5fa
+      CodeUri: s3://rappi-datalake-stagingenginecodepackages/fc0de2621cffad50b237dcec1652652b
       Description: Copy files that have failed ingress from the raw to failed bucket.
       MemorySize: 128
       Timeout: 600
@@ -389,7 +393,7 @@ Resources:
     Properties:
       Handler: recordFailedStaging.lambda_handler
       Runtime: python3.6
-      CodeUri: s3://rappi-datalake-stagingenginecodepackages/e6e7a1a2d8e52376b025bfb01ca8c8a0
+      CodeUri: s3://rappi-datalake-stagingenginecodepackages/5bf413141c0067f1788db2800ff8450e
       Description: Records failed staging in the data lake data catalog, and sends
         failure SNS if configured.
       MemorySize: 128
