@@ -144,6 +144,7 @@ Resources:
             - glue:GetDatabases
             Resource: "*"
             Effect: Allow
+            Action:
             - logs:*
             Resource: arn:aws:logs:*:*:*
       - PolicyName: S3CrawlerAccess
