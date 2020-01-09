@@ -103,10 +103,7 @@ Resources:
 
   # Role to be passed by the RecordSuccessfulStaging Lambda in order to sync the crawler
   GlueOpsServiceRole:
-    Type: "AWS::IAM::Role"
-    Properties:
-      ManagedPolicyArns:
-        - 'arn:aws:iam::aws:policy/service-role/AWSGlueServiceRole'  
+    Type: "AWS::IAM::Role" 
     Properties:
       AssumeRolePolicyDocument:
         Version: "2012-10-17"
@@ -119,6 +116,8 @@ Resources:
               AWS: !GetAtt [ LambdaExecutionRole, Arn ]
             Action: "sts:AssumeRole"
       Path: "/service-role/"
+      ManagedPolicyArns:
+        - 'arn:aws:iam::aws:policy/service-role/AWSGlueServiceRole'
       Policies:
       - PolicyName: IAM_PassRole
         PolicyDocument:
@@ -147,6 +146,17 @@ Resources:
             Effect: Allow
             - logs:*
             Resource: arn:aws:logs:*:*:*
+      - PolicyName: S3CrawlerAccess
+        PolicyDocument:
+          Version: '2012-10-17'
+          Statement:
+          - Sid: s3access
+            Effect: Allow
+            Action: 
+            - s3:ListBucket
+            - s3:GetObject
+            - s3:GetObjectVersion
+            Resource: !Sub "${EnvironmentPrefix}DataLake-S3Staging-Arn" 
 
   LambdaFailedFileProcessorRole:
     Type: "AWS::IAM::Role"
