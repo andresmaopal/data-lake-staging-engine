@@ -211,7 +211,7 @@ Resources:
               - Effect: Allow
                 Action:
                   - logs:*
-                Resource: "*"                              
+                Resource: arn:aws:logs:*:*:*                              
 
   # SAM Serverless (Lambda) list of functions :
   StartFileProcessing:
