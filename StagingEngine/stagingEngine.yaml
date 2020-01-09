@@ -157,7 +157,11 @@ Resources:
             - s3:ListBucket
             - s3:GetObject
             - s3:GetObjectVersion
-            Resource: !Sub "${EnvironmentPrefix}DataLake-S3Staging-Arn" 
+            Resource:
+              !Join
+                - ''
+                - - Fn::ImportValue: !Sub "${EnvironmentPrefix}DataLake-S3Staging-Arn"            
+                  - /*   
 
   LambdaFailedFileProcessorRole:
     Type: "AWS::IAM::Role"
