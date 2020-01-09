@@ -55,7 +55,7 @@ Resources:
               - Effect: Allow
                 Action:
                   - logs:*
-                Resource: "*"                          
+                Resource: arn:aws:logs:*:*:*                         
         - PolicyName: DDBGetPutScan
           PolicyDocument:
             Version: "2012-10-17"
@@ -144,6 +144,9 @@ Resources:
             - glue:CreatePartition
             - glue:GetDatabases
             Resource: "*"
+            Effect: Allow
+            - logs:*
+            Resource: arn:aws:logs:*:*:*
 
   LambdaFailedFileProcessorRole:
     Type: "AWS::IAM::Role"
