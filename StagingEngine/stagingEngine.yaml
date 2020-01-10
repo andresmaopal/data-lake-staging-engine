@@ -146,6 +146,9 @@ Resources:
             - glue:CreatePartition
             - glue:GetDatabases
             Resource: "*"
+      - PolicyName: Gluelogs_role
+        PolicyDocument:
+          Version: '2012-10-17'
             Effect: Allow
             Action:
             - logs:*
