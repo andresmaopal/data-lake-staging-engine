@@ -1,24 +1,24 @@
 {
     "crawlerSettings": {
       "glueRoleName": "prefix-GlueOpsServiceRole-xxxx",
-      "stagingDatabasePrefix": "customer_staging"
+      "stagingDatabasePrefix": "xxx_staging"
       },
     "fileSettings": {
       "fileFormat": "csv",
       "calculateMD5": "False",
       "stagingPartitionSettings": {
         "expression": "dt=%Y-%m-%d",
-        "timezone": "America/Los_Angeles"
+        "timezone": "America/Buenos_Aires"
       }
     },
-    "fileType": "us_generic",
+    "fileType": "uy_generic",
     "metadata": {
-      "country": "us",
+      "country": "uy",
       "quality": "High",
       "sourcesystem": "RDS Postgres"
     },
     "tags": {
-      "dataOwner": "Customer",
+      "dataOwner": "Owner_name",
       "pii": "FALSE"
     }
 }
