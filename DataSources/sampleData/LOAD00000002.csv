@@ -1,3 +1,4 @@
+id,sport_type_name,home_team_id,away_team_id,location_id,start_date_time,start_date,sold_out
 1191,baseball,1,201,5,2019-08-18 00:00:00.000000,2019-08-18,0
 1201,baseball,1,211,5,2019-08-25 00:00:00.000000,2019-08-25,0
 1211,baseball,1,221,5,2019-09-01 00:00:00.000000,2019-09-01,0

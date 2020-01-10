@@ -80,6 +80,7 @@ Resources:
               - Effect: Allow
                 Action:
                   - glue:ListCrawlers
+                  - glue:GetCrawler
                   - glue:GetCrawlers
                   - glue:CreateCrawler
                   - glue:StartCrawler
