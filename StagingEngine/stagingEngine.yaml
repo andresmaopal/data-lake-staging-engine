@@ -82,6 +82,7 @@ Resources:
                   - glue:ListCrawlers
                   - glue:GetCrawler
                   - glue:GetCrawlers
+                  - glue:UpdateCrawler
                   - glue:CreateCrawler
                   - glue:StartCrawler
                   - glue:CreateDatabase
