@@ -87,6 +87,7 @@ Resources:
                   - glue:CreateDatabase
                   - glue:StopCrawler
                   - glue:CreatePartition
+                  - glue:GetDatabase
                   - glue:GetDatabases
                 Resource: "*"
         - PolicyName: IAM_PassRole
