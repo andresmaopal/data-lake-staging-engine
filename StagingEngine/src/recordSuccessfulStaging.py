@@ -175,7 +175,7 @@ def record_successful_staging_in_data_catalog(event, context):
         print( "#INFO Crawler {} does not exist, attempting to create it...".format(crawler_name) )
 
         
-        database_name="{}_{}".format(staging_database_prefix,country_code)
+        database_name="{}_{}_{}_{}".format(staging_database_prefix,country_code,file_database,file_schema)
         
         responseGetDatabases = glue_client.get_databases()
         
